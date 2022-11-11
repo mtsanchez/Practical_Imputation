@@ -1,0 +1,205 @@
+---
+title: "mice example code"
+author: "Marta Pineda-Moncusi"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+rm(list=ls()) 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Tutorial for multiple imputation using mice package
+*Introduction text: seven steps*
+
+
+#**0. Load and evaluate the data**
+We are going to use a data set call boys included in the mice package: https://rdrr.io/cran/mice/man/boys.html
+age: Decimal age (0-21 years)
+hgt: Height (cm)
+wgt: Weight (kg)
+bmi: Body mass index
+hc:  Head circumference (cm)
+gen: Genital Tanner stage (G1-G5)
+phb: Pubic hair (Tanner P1-P6)
+tv:  Testicular volume (ml)
+reg: Region (north, east, west, south, city)
+
+
+```{r mice}
+library(mice)
+dim(boys)
+summary(boys)
+str(boys)
+```
+Check the structure of the data:
+- How many cases (individuals) are in the data? 748
+- How many variables do we have? 10
+- Which are numeric? age, hgt, wgt, bmi, hc, tv
+- Which are factor?  gen, phb, reg
+- Is there any variable with missing? All except age
+
+#**1. Check that variables with missing data are associated with variables that are complete**
+To do so, crate a dummy variable were missing values are 1 and complete values are 0, and run a logistic regression.
+```{r}
+
+#list the variables you want to test
+test_var_list = names(boys)[-1]
+
+for (v in 1:length(test_var_list)){
+  test_var = ifelse(is.na(boys[[test_var_list[v]]]), 1,0 )
+  test = glm(test_var ~ boys$age)
+  ci = confint.default(test)
+ print(paste(test_var_list[v]," ~ AGE 95%CI: Low ", round(ci[2,1],4),"  High ", round(ci[2,2],4), sep="")) #Check CI
+ print(paste(test_var_list[v]," ~ AGE p value: ",   round((summary(test))$coefficients[2,4],5), sep=""))   #Check p_value
+}
+
+```
+
+# **2. Check that your numeric variables are linear with your outcome**
+For this exercise, we will consider the variable 'bmi' as the outcome
+```{r}
+
+#list the variables you want to test
+test_var_list = c("age","hgt","wgt","bmi","hc")
+outcome = "tv"
+
+for (v in 1:length(test_var_list)){
+  df = cbind(boys[test_var_list[v]],outcome = boys[[outcome]])
+  test = lm(outcome ~ ., data = df)
+  par(mfrow = c(2, 2))
+  plot(test,main=paste(test_var_list[v],"\n",sep=""))
+}
+```
+How to interpret the plots: The diagnostic plots show residuals in four different ways
+> **Residuals vs Fitted: Used to check the linear relationship assumptions.** A horizontal line, without distinct patterns is an indication for a linear relationship, what is good.
+> Normal Q-Q: Used to examine whether the residuals are normally distributed. It’s good if residuals points follow the straight dashed line.
+> Scale-Location (or Spread-Location): Used to check the homogeneity of variance of the residuals (homoscedasticity). Horizontal line with equally spread points is a good indication of homoscedasticity.
+> Residuals vs Leverage: Used to identify influential cases, that is extreme values that might influence the regression results when included or excluded from the analysis.
+
+- Which variables does follow a normal distribution? tv
+- Which variables does not follow a normal distribution? age, hgt, wgt, hc
+- What should we do? Transform the variables. Simplest e.g. Categorization
+
+#```{r dplyr}
+library(dplyr)
+
+#transform to categorical
+boys %>%
+mutate(
+  age_cat = ifelse(age>=18,">=18","<18")
+  
+)
+#Include the NA
+boys %>%
+mutate(
+  age_cat = ifelse(is.na(age),"NA",age_cat)
+)
+
+ifelse(boys$bmi[!is.na(boys$bmi)]>=18,">=18","<18"), useNA = "always")
+
+
+#```
+
+#== 7 Questions structure [empty] ==
+
+
+#**1. Check the assumption that data is missing at random (MAR)** 
+MICE can handle both MAR and missing not at random (MNAR). Multiple imputation under MNAR requires additional modeling assumptions that influence the generated imputations.  [Not covered in this practical]
+
+#```{r  Sensitivity analysis to test MAR or NMAR}
+
+
+
+
+
+
+
+
+ini <- mice(boys,maxit=0,print=FALSE)
+post <- ini$post
+k <- seq(1,1.5,0.1)
+est <- vector("list",length(k))
+for (i in 1:length(k)) {
+   post["bmi"] <- paste("imp[[j]][,i] <-",k[i],"* imp[[j]][,i]")
+   imp <- mice(boys, post=post, seed=2022, print=FALSE, maxit=20)
+   fit <- with(imp, lm(hc~age+bmi+gen+phb+tv+reg))
+   est[[i]] <- summary(pool(fit))
+ }
+pint(est[[1]])
+#```
+
+#**2. Form of the imputation model**
+```{r}
+
+
+
+```
+
+#**3. Select the variables that will be used for imputing the missing values (i.e., set of variables to include as predictors)**
+#   General advice: to include as many relevant variables as possible including their interactions. 
+#   Warning: This may however lead to unwieldy model specifications that could easily get out of hand.
+```{r}
+
+```
+
+#**4. Incorporating variables that are functions of other (incomplete) variables to the imputation.**
+#   Many data sets contain transformed variables, sum scores, interaction variables, ratio's, and so on. It can be useful to incorporate the transformed variables into the multiple imputation algorithm. 
+```{r}
+
+```
+
+#**5. Order in which variables should be imputed.**
+|-----|-----|-----|-----|
+| Method | Description | Scale type | Default |
+|-----|-----|-----|-----|
+| pmm  | Predictive mean matching | numeric | Y |
+| norm | Bayesian linear regression | numeric |  |
+| norm.nob | Linear regression, non-Bayesian | numeric |  |
+| mean | Unconditional mean imputation | numeric |  |
+| 2L.norm | Two-level linear model | numeric |  |
+| logreg | Logistic regression | factor, 2 levels | Y |
+| polyreg | Multinomial logit model | factor, >2 levels | Y |
+| polr | Ordered logit model | ordered, >2 levels | Y |
+| lda | Linear discriminant analysis | factor |  |
+| sample | Random sample from the observed data | any |  |
+|-----|-----|-----|-----|
+
+```{r}
+
+a<- c("a","b")
+
+```
+
+#**6. Setup of the starting imputations and the number of iterations.**
+The convergence of the MICE algorithm can be monitored in many ways.
+```{r}
+
+```
+
+#**7. Number of multiply imputed data sets (m):**
+Thumps up rule: 10% NA = 10 imputed data sets, 20% NA = 20 imputed datasets, etc.
+```{r}
+
+```
+
+
+
+
+
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+#```{r pressure, echo=FALSE}
+#plot(pressure)
+#```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
