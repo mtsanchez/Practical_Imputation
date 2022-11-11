@@ -1,0 +1,28 @@
+{
+    "id": "C7CA9D4B",
+    "path": null,
+    "project_path": null,
+    "type": "object_explorer",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1668099550401.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "id": "2d2bbee30a34454bbb3501e69388b6e4",
+        "name": "ini",
+        "title": "ini",
+        "language": "R",
+        "source_window_id": "",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 2314885436531613754,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1668099550401,
+    "read_only": false,
+    "read_only_alternatives": []
+}

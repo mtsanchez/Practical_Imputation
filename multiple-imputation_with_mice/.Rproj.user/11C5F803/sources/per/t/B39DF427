@@ -1,0 +1,28 @@
+{
+    "id": "B39DF427",
+    "path": "~/multiple-imputation_with_mice/multiple_imputation_with_mice.Rmd",
+    "project_path": "multiple_imputation_with_mice.Rmd",
+    "type": "r_markdown",
+    "hash": "3974315644",
+    "contents": "",
+    "dirty": false,
+    "created": 1668100800540.0,
+    "source_on_save": false,
+    "relative_order": 3,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "96,5",
+        "scrollLine": "68",
+        "last_setup_crc32": "E04EB7F1bb338d19"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1668175325,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1668175325208,
+    "read_only": false,
+    "read_only_alternatives": []
+}
