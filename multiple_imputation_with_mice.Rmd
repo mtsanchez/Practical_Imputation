@@ -1,0 +1,127 @@
+---
+title: "mice example code"
+author: "Marta Pineda-Moncusi"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Tutorial for multiple imputation using mice package
+*Introduction text: seven steps*
+
+#**0. Load data**
+We are going to use a dataset call boys included in the mice package.
+```{r Call "mice" library and see a summary of dataset boys}
+library(mice)
+summary(boys)
+```
+# Add an outcome (random data):
+
+# Check the data
+
+transponer 0/1 No missing i NA hacer regresion con edad.
+# Include vairables that you want to check it's association with variables without missing (age)
+
+boys$test = ifelse(is.na(boys$bmi), 1,0 )
+mis_bmi = glm(test ~ age, data=boys)
+
+# comprobar outcome y variables son lineales
+
+
+#**1. Check the assumption that data is missing at random (MAR)** 
+MICE can handle both MAR and missing not at random (MNAR). Multiple imputation under MNAR requires additional modeling assumptions that influence the generated imputations.  [Not covered in this practical]
+
+```{r  Sensitivity analysis to test MAR or NMAR}
+
+
+
+
+
+
+
+
+ini <- mice(boys,maxit=0,print=FALSE)
+post <- ini$post
+k <- seq(1,1.5,0.1)
+est <- vector("list",length(k))
+for (i in 1:length(k)) {
+   post["bmi"] <- paste("imp[[j]][,i] <-",k[i],"* imp[[j]][,i]")
+   imp <- mice(boys, post=post, seed=2022, print=FALSE, maxit=20)
+   fit <- with(imp, lm(hc~age+bmi+gen+phb+tv+reg))
+   est[[i]] <- summary(pool(fit))
+ }
+pint(est[[1]])
+```
+
+#**2. Form of the imputation model**
+```{r}
+
+
+
+```
+
+#**3. Select the variables that will be used for imputing the missing values (i.e., set of variables to include as predictors)**
+#   General advice: to include as many relevant variables as possible including their interactions. 
+#   Warning: This may however lead to unwieldy model specifications that could easily get out of hand.
+```{r}
+
+```
+
+#**4. Incorporating variables that are functions of other (incomplete) variables to the imputation.**
+#   Many data sets contain transformed variables, sum scores, interaction variables, ratio's, and so on. It can be useful to incorporate the transformed variables into the multiple imputation algorithm. 
+```{r}
+
+```
+
+#**5. Order in which variables should be imputed.**
+|-----|-----|-----|-----|
+| Method | Description | Scale type | Default |
+|-----|-----|-----|-----|
+| pmm  | Predictive mean matching | numeric | Y |
+| norm | Bayesian linear regression | numeric |  |
+| norm.nob | Linear regression, non-Bayesian | numeric |  |
+| mean | Unconditional mean imputation | numeric |  |
+| 2L.norm | Two-level linear model | numeric |  |
+| logreg | Logistic regression | factor, 2 levels | Y |
+| polyreg | Multinomial logit model | factor, >2 levels | Y |
+| polr | Ordered logit model | ordered, >2 levels | Y |
+| lda | Linear discriminant analysis | factor |  |
+| sample | Random sample from the observed data | any |  |
+|-----|-----|-----|-----|
+
+```{r}
+
+<- c()
+
+```
+
+#**6. Setup of the starting imputations and the number of iterations.**
+The convergence of the MICE algorithm can be monitored in many ways.
+```{r}
+
+```
+
+#**7. Number of multiply imputed data sets (m):**
+Thumps up rule: 10% NA = 10 imputed data sets, 20% NA = 20 imputed datasets, etc.
+```{r}
+
+```
+
+
+
+
+
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
