@@ -79,8 +79,14 @@ patient lives in (variable `imdscore`).
 #install.packages("dplyr")
 library(dplyr)
 
-#Insert the path were "hip.data" is stored
-folder_path <- ("C:/Users/msanchez/Documents/GitHub/Practical_Imputation/multiple-imputation_with_mice/") 
+#See your working directory
+getwd()
+
+#Update your working directory to the folder where "hip.data" is stored (if necessary)
+update_wd = "NO"         #"NO" for keeping the current working directory. "YES" to update, plus including the new path in folder_path variable below.
+if(update_wd == "YES"){
+folder_path <- ("C:/Users/msanchez/Documents/GitHub/Practical_Imputation/multiple-imputation_with_mice/")  #Remind to use / (NOT \)
+setwd(folder_path)}
 
 #load data
 data <- read.csv("hip.csv", sep=',')
@@ -145,8 +151,8 @@ values are 0, and run a logistic regression.
 
 ```{r, results='hide', warning = FALSE}
 #list the variables you want to test
-test_var_list = c("EQ5D0", "height", "weight", "bmi", "satisfaction", "ethnic", "imdscore")
-complete_var  = c("age", "sex", "retired", "ohs0","ohs6", "side") #, "improve") #Q: Since the outcome ("ohsdiff") is a derivation from  "oh0" and "oh6", should we include here?
+test_var_list = c("eq5d0", "height", "weight", "bmi", "satisfaction", "ethnic", "imdscore")
+complete_var  = c("age", "sex", "retired", "ohsdiff","side")
 
 for (v in 1:length(test_var_list)){
  test_var = ifelse(is.na(data[[test_var_list[v]]]), 1,0 )
@@ -156,8 +162,22 @@ for (v in 1:length(test_var_list)){
 }
 ```
 
-https://search.r-project.org/CRAN/refmans/misty/html/na.test.html#:~:text=Little%20(1988)%20proposed%20a%20multivariate,with%20the%20expected%20population%20means
-https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-017-0442-1#ref-CR1
+Alternative, we can use the function na.test() from the package misty:
+This function tests all your dataset. If the output is a significant p
+value (p\<0.05), your data is not completely "Missing Completely at
+Random" (MCAR) and you can impute. If p\>0.05, your data might be MCAR
+unless you think is possible/suspect that a variable not recorded in
+your data could explain the missingness.
+
+<https://search.r-project.org/CRAN/refmans/misty/html/na.test.html#>:\~:text=Little%20(1988)%20proposed%20a%20multivariate,with%20the%20expected%20population%20means
+<https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-017-0442-1#ref-CR1>
+
+```{r, misty}
+library(misty)
+
+na.test(data)
+
+```
 
 ------------------------------------------------------------------------
 
@@ -197,18 +217,18 @@ missing data pattern.
 The mice package contains a function to inspect the missing data
 pattern: `md.pattern()`
 
-```{r mice}
+```{r mice, warning = FALSE}
 
 #Selecting variables with missing data
-missvars <- c("imdscore", "EQ5D0", "satisfaction", "ethnic", "height", "weight", "bmi", "retired")
-#missdata <- data[missvars]
+missvars <- c("imdscore", "eq5d0", "satisfaction", "ethnic", "height", "weight", "bmi", "retired")
+missdata <- data[missvars]
 
 #Exploring missing pattern with md.pattern() function
 #The md.pattern() function shipped with Multivariate Imputation by Chained Equations (MICE) package can be used to produce a table displaying the missing pattern.
 
 #install.package("mice")
 library(mice)
-md.pattern(data, plot=FALSE)
+md.pattern(missdata, plot=FALSE)
 
 ```
 
@@ -230,21 +250,21 @@ contains 359 missing values. This table can be helpful when you decide
 to drop some observations with missing variables exceeding a preset
 threshold.
 
-```{r ggmice VIM}
+```{r ggmice VIM, warning = FALSE}
 #Visual presentation of missing data pattern
 
 #We are using three different functions to display visually the patterns of the missing data in R: 
 
 #library(mice)
-md.pattern(data, plot=TRUE, rotate.names=TRUE)
+md.pattern(missdata, plot=TRUE, rotate.names=TRUE)
 
 #install.package("ggmice")
 library(ggmice)
-plot_pattern(data, vrb = "all", square = FALSE, rotate = TRUE, cluster = NULL)
+plot_pattern(missdata, vrb = "all", square = FALSE, rotate = TRUE, cluster = NULL)
 
 #install.packages("VIM")
 library(VIM)
-aggr(data, labels=names(data), numbers=FALSE, prop=TRUE)
+aggr(missdata, labels=names(data), numbers=FALSE, prop=TRUE)
 
 ```
 
@@ -259,7 +279,7 @@ data](https://stefvanbuuren.name/fimd/ch-multivariate.html){.uri}
 
 ```{r, results='hide', warning = FALSE, fig.show='hide'}
 #list the variables you want to test
-test_var_list = c("age", "EQ5D0", "height", "weight", "satisfaction", "bmi", "imdscore" )
+test_var_list = c("age", "eq5d0", "height", "weight", "satisfaction", "bmi", "imdscore" )
 outcome = "ohsdiff"
 
 for (v in 1:length(test_var_list)){
@@ -346,6 +366,8 @@ R has the `interaction.plot()` function built-in.
 #interaction.plot(data$sex, data$improve, data$bmi)
 
 #interaction.plot(data$sex, data$improve, data$ohsdiff) 
+
+interaction.plot(missdata$sex, missdata$improve, missdata$ohsdiff) 
 ```
 
 ## 6. Choosing imputation methods.
@@ -381,8 +403,8 @@ dataset\
 
 ```{r, results='hide', warning = FALSE}
 names(data) #3.1
-imp_list=c("EQ5D0","height","weight","satisfaction","bmi","ethnic","imdscore")#3.2
-methods=c("EQ5D0","height","weight","satisfaction","bmi","ethnic","imdscore") #3.3
+imp_list=c("eq5d0","height","weight","satisfaction","bmi","ethnic","imdscore")#3.2
+methods=c("eq5d0","height","weight","satisfaction","bmi","ethnic","imdscore") #3.3
 
 #####anyadir 
 ```
