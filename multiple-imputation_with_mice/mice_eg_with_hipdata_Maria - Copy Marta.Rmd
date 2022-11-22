@@ -187,7 +187,7 @@ model.matrix(~0+., data=miss_data[corr_var]) %>%
     the correlation is 0.99, and that means that bmi and ethnic have
     almost the same missing values.
 
-2.  Create a dummy variable/s where missing values are classifed as 1
+2.  Create a dummy variable/s where missing values are classified as 1
     and complete values as 0, then we run a logistic regression:
 
 ```{r, results='hide',warning = FALSE, message = FALSE}
@@ -487,7 +487,7 @@ interaction effect.
 ## Try test interaction with other independent variable. 
 
 ##Categorise varX if needed:
-varX_cat = ifelse(data$varX >= value)
+varX_cat = data$ethnic
 
 #interaction.plot using median of ohsdiff (outcome):
 interaction.plot(x.factor=varX_cat, trace.factor=data$sex, response=data$ohsdiff, fun = median,  col = c("#0198f9", "#f95801")) 
@@ -523,7 +523,7 @@ to correctly specify each of these distributions. `mice` automatically
 chooses distributions for variables.
 
 If we would like to change the methods used to impute the missing
-values, we can do it by changing the methods\' characteristics.
+values, we can do it by changing the methods' characteristics.
 
 *You can follow the following three lines of the code*\
 3.1 Choose the variables we want to impute\
@@ -540,7 +540,7 @@ impmodel_var=c("age","sex","ohs0","ohsdiff","ethnic","eq5d0","bmi","imdscore","s
 imp <- mice(data[impmodel_var], m=5, maxit=0)
 imp$method #3.2
 
-#In this example, mice identifies the correct distribution for each variable. But, if for example, if you want to change the method used for bmi, you can do the following:
+#In this example, mice identifies the correct distribution for each variable. But, if you want to change the method used for bmi, you can do the following:
 
 meth <- imp$method
 
@@ -582,8 +582,8 @@ where:
     is 5. It is important that the imputations for all variables reach
     convergence, otherwise they will be inaccurate.
 
--   m: number of multiple imputations (multiple datasets returned by the
-    function). The observed data will be the same across the imputed
+-   m: number of multiple imputations (multiple data sets returned by
+    the function). The observed data will be the same across the imputed
     data sets; only the values that had originally been missing will
     differ. The default number of imputations is 5. Generally the more
     the better, but then the analysis takes longer to run and it consume
@@ -598,9 +598,9 @@ where:
 When using the mice package, the steps for your analysis are the
 following:
 
-1.  First your create your m imputed datasets. (mice() - function)
+1.  First your create your m imputed data sets. (mice() - function)
 
-2.  Then you do your analysis on each of these datasets. (with() -
+2.  Then you do your analysis on each of these data sets. (with() -
     function)
 
 3.  In the end you combine these results together. (pool() - function)
@@ -628,7 +628,7 @@ and standard errors, resulting is an object of class mipo;
 Optionally, compare pooled estimates from different scientific models by
 the pool.compare() function.
 
-We create the impute datasets with the function `mice`:
+We create the impute data sets with the function `mice`:
 
 ```{r, results='hide', warning = FALSE, message=FALSE}
 impmodel_var=c("age","sex","ohs0","ohsdiff","ethnic","eq5d0","bmi","imdscore","smoking")#3.2
@@ -640,29 +640,122 @@ summary(pool(fit), conf.int = TRUE) #7.3
 
 ## 9. Checking after imputation
 
-```{r, results='hide', warning = FALSE}
-# create the impute datasets
-imp = mice(data, maxit=10, m = 5)  #7.1
+We can observe which values has been imputed:
+
+-   The `stripplot()` is useful to study the distributions in data sets
+    with a low number of data points.
+-   For large data sets it is more appropriate to use the function
+    `bwplot()` that produces side-by-side box-and-whisker plots for the
+    observed and synthetic data.
+
+```{r, results='hide', warning = FALSE, message = FALSE}
+impmodel_var=c("age","sex","ohs0","ohsdiff","ethnic","eq5d0","bmi","imdscore","smoking")#3.2
+
+imp = mice(data[impmodel_var], maxit=10, m = 5)  #7.1
 fit = with(data=imp,expr = lm(ohsdiff~age+sex+bmi+eq5d0+ethnic+imdscore+smoking+ohs0)) #7.2
 summary(pool(fit), conf.int = TRUE) #7.3
+
+#Observe which values has been imputed
+stripplot(imp) #blue = observed data; red = imputed data
+bwplot(imp)    #blue = observed data; red = imputed data
 ```
+
+Evaluate differences between observed and imputed data:
+
+1.  Observe their distribution before (observed) and after (imputed
+    data):
+
+```{r, results='hide', warning = FALSE, message = FALSE}
+densityplot(imp) #blue line = observed data; red lines = imputed data 
+```
+
+-   Do you think distributions match up well? Yes
+
+2.  Compare the distributions of observed and imputed data conditional
+    on the missingness probability.
+
+Interpretation is more difficult if discrepancies are shown in the
+density plot. Such discrepancies may be caused by a bad imputation
+model, by a missing data mechanism that is not MCAR or by a combination
+of both.
+
+If there are discrepancies, Bondarenko and Raghunathan (2016) proposed a
+more refined diagnostic tool that aims to compare the distributions of
+observed and imputed data conditional on the missingness probability.
+The idea is that [under MAR the conditional distributions should be
+similar if the assumed model for creating multiple imputations has a
+good fit]{.underline}. An example is created as:
+
+```{r, results='hide', warning = FALSE, message = FALSE}
+
+#Model the probability of each record being incomplete as a function of all variables in each imputed data set.
+fit <- with(imp, glm(ici(imp)~ohsdiff+age+sex+bmi+eq5d0+ethnic+imdscore+smoking+ohs0, family = binomial)) 
+
+# The probabilities (propensities) are then averaged over the imputed datasets to obtain stability.
+ps <- rep(rowMeans(sapply(fit$analyses, fitted.values)),
+          imp$m + 1)
+
+#Plot the each variable against the propensity score in each dataset:
+#blue = observed data; red = imputed data
+xyplot(imp, bmi ~ ps | as.factor(.imp),
+       xlab = "Probability that record is incomplete",
+       ylab = "BMI", pch = c(1, 19), col = mdc(1:2))
+
+xyplot(imp, eq5d0 ~ ps | as.factor(.imp),
+       xlab = "Probability that record is incomplete",
+       ylab = "EQ5D0", pch = c(1, 19), col = mdc(1:2))
+
+xyplot(imp, ethnic ~ ps | as.factor(.imp),
+       xlab = "Probability that record is incomplete",
+       ylab = "Ethnic", pch = c(1, 19), col = mdc(1:2))
+
+xyplot(imp, imdscore ~ ps | as.factor(.imp),
+       xlab = "Probability that record is incomplete",
+       ylab = "imdscore", pch = c(1, 19), col = mdc(1:2))
+
+xyplot(imp, smoking ~ ps | as.factor(.imp),
+       xlab = "Probability that record is incomplete",
+       ylab = "Smoking", pch = c(1, 19), col = mdc(1:2))
+
+#impmodel_var=c("age","sex","ohs0","ohsdiff","ethnic","eq5d0","bmi","imdscore","smoking")
+```
+
+In this case, the distributions of the blue and red points are quite
+similar, as expected under MAR.
+
+3.  Compare complete results vs imputed results
+
+```{r, results='hide', warning = FALSE, message = FALSE}
+
+#Complete cases results:variables names, OR, Low and High CI
+fit0 =lm(ohsdiff~age+sex+bmi+eq5d0+ethnic+imdscore+smoking+ohs0, data=na.omit(data))
+print("Using complete cases")
+print( cbind(OR=summary(fit0)$coefficients[,1],confint(fit0)) )
+
+#Imputed results: variables names, OR, Low and High CI
+print("Using imputed data")
+summary(pool(fit), conf.int = TRUE)[c(1,2,7,8)]
+
+```
+
+Interpretation: After imputation, age is significant in our model. Results regarding all other variables seems to be consistent before and after imputation.
 
 ## 10. What to do when a statistical analysis is not compatible with with() function
 
 There might be cases where an analysis is such complex that you won't be
 able to use the function with(). For this cases, the alternative is to
-store the imputed datasets into a list, run the desired methods using a
+store the imputed data sets into a list, run the desired methods using a
 loop, and later combine the results.
 
 9.1 Run imputation\
-9.2 Extract the imputed datasets: imp.data is a data.frame that contains
-all the imputed datasets, which are distinguishable by the variable
-.imp\
-9.3 See de number of individuals for each imputed dataset\
+9.2 Extract the imputed data sets: imp.data is a data.frame that
+contains all the imputed data sets, which are distinguishable by the
+variable .imp\
+9.3 See de number of individuals for each imputed data set\
 9.4 Create a list for storing the results where the length is the number
-if imputed datasets\
-9.5 Run a loop for each of the imputed datasets and store the results in
-the list created in the previous step.\
+if imputed data sets\
+9.5 Run a loop for each of the imputed data sets and store the results
+in the list created in the previous step.\
 9.6 Transform the list into a mira object to perform the pooling\
 9.7 Pool the results
 
@@ -682,3 +775,23 @@ Fit.list.mira = as.mira(Fit.list)   #9.6 Loop end
 summary(pool(Fit.list.mira),conf.int = TRUE) #9.7
 
 ```
+
+[**AVOID***:*]{.underline}
+
+-    [Averaging the data]{.underline}: You might be tempted to average
+    the multiply imputed data, and analyze the averaged data as if it
+    were complete. This method yields incorrect standard errors,
+    confidence intervals and p-values, and thus should not be used if
+    any form of statistical testing or uncertainty analysis is to be
+    done on the imputed data. The reason is that the procedure ignores
+    the between-imputation variability, and hence shares all the
+    drawbacks of single imputation
+
+-   [Stack imputed data]{.underline}: creating m×n complete records by
+    stacking the imputed data, where each record is weighted by a factor
+    1/m, so that the total sample size is equal to n. While the
+    estimated regression coefficients are unbiased, we cannot trust the
+    standard errors, t-values and so on. An advantage of stacking over
+    averaging is that it is easier to analyze categorical data. Although
+    stacking can be useful in specific contexts, like variable
+    selection, in general it is not recommended.
