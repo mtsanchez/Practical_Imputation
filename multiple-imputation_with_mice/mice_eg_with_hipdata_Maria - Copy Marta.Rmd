@@ -50,10 +50,10 @@ post-operative. The absolute change in OHS between pre- and
 post-operative assessments (variable `ohsdiff`) is negative if patient
 symptoms have improved and positive for worsening.
 
-The pre-operative `EQ5D` contains information from 5 questions asking
+The pre-operative `eq5d0` contains information from 5 questions asking
 about a patient's health state today, covering mobility, self-care,
-usual activities, pain, and anxiety. The `EQ5D` has been converted to a
-single summary score (variable `EQ5D0`), anchored at 0 for death and 1
+usual activities, pain, and anxiety. The `eq5d0` has been converted to a
+single summary score (variable `eq5d0`), anchored at 0 for death and 1
 for full health, with some health states being worse than dead (-0.594).
 
 Six months after their operation patients were asked about their overall
@@ -83,7 +83,7 @@ library(dplyr)
 getwd()
 
 #Update your working directory to the folder where "hip.data" is stored (if necessary)
-update_wd = "NO"         #"NO" for keeping the current working directory. "YES" to update, plus including the new path in folder_path variable below.
+update_wd = "NO" #"NO" for keeping the current working directory. "YES" to update, plus including the new path in folder_path variable below.
 if(update_wd == "YES"){
 folder_path <- ("C:/Users/msanchez/Documents/GitHub/Practical_Imputation/multiple-imputation_with_mice/")  #Remind to use / (NOT \)
 setwd(folder_path)}
@@ -91,6 +91,24 @@ setwd(folder_path)}
 #load data
 data <- read.csv("hip.csv", sep=',')
 
+#MAR smoking variable
+data$smoking[data$sex == 1] = 
+  sample(c("Smoker", "Non-smoker", NA), 
+         sum(data$sex == 1), 
+         replace = TRUE,
+         prob = c(0.1, 0.5, 0.4))
+
+data$smoking[data$sex == 0] = 
+  sample(c("Smoker", "Non-smoker", NA), 
+         sum(data$sex == 0), 
+         replace=TRUE, prob = c(0.15, 0.75, 0.1))
+data$smoking = factor(data$smoking)
+
+#occupation correlated to outcom
+data$occupation = ifelse(data$ohsdiff>median(data$ohsdiff), 1 ,0)
+occupation = factor(occupation, levels = c(0,1), labels = c("Manual worker","Non-manual worker"))
+
+                    
 #Display the names of variables in the data set.
 names(data)
 
@@ -100,6 +118,7 @@ data = data %>%
                  retired = factor(retired, levels = c(0,1), labels = c("Not retired","Retired")),
                  ethnic = factor(ethnic, levels = c(0,1), labels = c("White","Non white")),
                  side = factor(side, levels = c(0,1), labels = c("Right","Left")))
+                 smoking = factor(smoking, levels = c(0,1), labels = c("Smoker","Non-smoker"))
 
 #Observe/explore the data
 dim(data)
@@ -110,15 +129,15 @@ Check the structure of the data:
 
 -   How many cases (individuals) are in the data? 708
 
--   How many variables do we have? 15
+-   How many variables do we have? 16
 
 -   Which are numeric? age, oh0, oh6, ohsdiff, EQ5D0, height, weight,
     satisfaction, bmi and imdscore
 
--   Which are factor? sex, retired, ethnic and side
+-   Which are factor? sex, retired, ethnic, side and smoking
 
 -   Is there any variable with missing? EQ5D0, height, weight, bmi,
-    satisfaction, ethnic and imdscore
+    satisfaction, ethnic, imdscore and smoking
 
 -   Describe the outcome: Mean (-18.6), Median (Range): -19 (-43-19).
     Mean and median are very close, we can think that the distribution
@@ -164,8 +183,8 @@ for (v in 1:length(test_var_list)){
 
 Alternative, we can use the function na.test() from the package misty:
 This function tests all your dataset. If the output is a significant p
-value (p\<0.05), your data is not completely "Missing Completely at
-Random" (MCAR) and you can impute. If p\>0.05, your data might be MCAR
+value (p\<0.05), you can reject the null hypothesis that the data is "Missing Completely at
+Random" (MCAR) and you can impute. If p\>0.05, you can't reject the null hypothesis, therefore, your data might be MCAR
 unless you think is possible/suspect that a variable not recorded in
 your data could explain the missingness.
 
@@ -220,7 +239,7 @@ pattern: `md.pattern()`
 ```{r mice, warning = FALSE}
 
 #Selecting variables with missing data
-missvars <- c("imdscore", "eq5d0", "satisfaction", "ethnic", "height", "weight", "bmi", "retired")
+missvars <- c("imdscore", "eq5d0", "satisfaction", "ethnic", "height", "weight", "bmi", "retired", "smoking", "occupation")
 missdata <- data[missvars]
 
 #Exploring missing pattern with md.pattern() function
@@ -235,8 +254,8 @@ md.pattern(missdata, plot=FALSE)
 -   Can you please interpreter the output table? what do you think it is
     displaying?
 
-#Interpreation of the table In the main body of the output table The
-values "1" indicates non-missing value and "0" indicates missing value.
+**Interpreation of the table In the main body of the output table** 
+The values "1" indicates non-missing value and "0" indicates missing value.
 The first column shows the number of unique missing data patterns.
 
 There are 330 observations with non-missing values, and there are 227
