@@ -3,8 +3,8 @@ title: "mice example code"
 author: "Maria Sanchez and Marta Pineda-Moncusi"
 date: "`r Sys.Date()`"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 editor_options: 
   markdown: 
     wrap: 72
@@ -60,18 +60,20 @@ Six months after their operation patients were asked about their overall
 satisfaction with the outcome of surgery measured on a visual analogue
 scale from 0 to 100 (variable `satisfaction`).
 
-Pre-operative information was collected on age at the time of surgery,
+Pre-operative information was collected on `age` at the time of surgery,
 `sex` (0 = Male; 1 = Female), `height` (metres) and `weight` (kg) (from
 which body mass index (`bmi`) is calculated), `side` of surgery (Left;
 Right), `ethnic` group (0 = White; 1 = Non white), whether or not they
-are `retired` (0 = Not retired; 1 = Retired). The Index of Multiple
-Deprivation is a measure of social deprivation, linked to the area a
-patient lives in (variable `imdscore`).
+are `retired` (0 = Not retired; 1 = Retired), `smoking` (0 = Non-smoker;
+1 = Smoker) and `occupation` is defined as 1 if the individual is manual
+worked and 0 if not. The Index of Multiple Deprivation is a measure of
+social deprivation, linked to the area a patient lives in (variable
+`imdscore`)
 
 -   The outcome/dependent variable (*Y*) for this study is `ohsdiff` =
     change in ohs before and after surgery
--   The independent variables (*X's*) are = `age`, `sex`, `bmi`,
-    `ethnic`, `imdscore` , `smoking` , `eq5d0`, `occupation`, `ohs0`
+-   The independent variables (*X's*) are = `age`, `sex`, `ethnic`,
+    `imdscore` , `bmi`, `smoking` , `eq5d0` and `ohs0`
 
 ```{r dplyr, results='hide', warning = FALSE, message = FALSE}
 
@@ -126,11 +128,15 @@ Check the structure of the data:
 -   Is there any variable with missing? EQ5D0, height, weight, bmi,
     satisfaction, ethnic, imdscore and smoking
 
+-   Which is the variable with higher number of missing data? and which
+    is the %? ethnic (\>50%)
+
 -   Describe the outcome: Mean (-18.6), Median (Range): -19 (-43-19).
-    Mean and median are very close, we can think that the distribution
-    of the outcome is normal. You would like to check this assumption
-    with a density plot or histogram. The majority of patients improved
-    in terms of pain and function after surgery (negative values).
+    Mean and median values are very close, so we can think that the
+    distribution of the outcome is normal. You would like to check this
+    assumption with a density plot or histogram. The majority of
+    patients improved in terms of pain and function after surgery
+    (negative values).
 
     ------------------------------------------------------------------------
 
@@ -149,32 +155,68 @@ Check the structure of the data:
 
 ![](images/Types%20of%20missing%20data.png)
 
-**Check that variables with missing data are associated with variables
-that are complete**
+To explore the mechanism of the missing data in our data set, we can
+check if missingnes are associated with completed variables.
 
-To do so, create a dummy variable were missing values are 1 and complete
-values are 0, and run a logistic regression.
+There are three different ways to check it:
+
+1.  Correlation matrix
 
 ```{r, results='hide',warning = FALSE, message = FALSE}
 #list the variables you want to test
-test_var_list = c("eq5d0", "height", "weight", "bmi", "satisfaction", "ethnic", "imdscore","smoking")
+miss_var_list = c("eq5d0", "ethnic", "imdscore", "bmi", "smoking")
+complete_var  = c("age", "sex", "ohsdiff","ohs0")
+library(ggcorrplot)
+
+#Generate a data frame where missing variables are codified by 0=non-missing value and 1=missing value:
+miss_data =  data %>% mutate(
+  miss_eq5d0= ifelse(is.na(eq5d0),1,0), 
+  miss_ethnic= ifelse(is.na(ethnic),1,0), 
+  miss_imdscore= ifelse(is.na(imdscore),1,0), 
+  miss_bmi=ifelse(is.na(bmi),1,0), 
+  miss_smoking= ifelse(is.na(smoking),1,0) )
+
+corr_var = c("miss_eq5d0", "miss_ethnic", "miss_imdscore", "miss_bmi", "miss_smoking", complete_var)
+
+model.matrix(~0+., data=miss_data[corr_var]) %>% 
+  cor(use="pairwise.complete.obs")  %>% 
+  ggcorrplot(show.diag = F, type="lower", lab=TRUE, lab_size=2)
+```
+
+-   What does the correlation between bmi and ethnic missingnes mean?
+    the correlation is 0.99, and that means that bmi and ethnic have
+    almost the same missing values.
+
+2.  Create a dummy variable/s where missing values are classifed as 1
+    and complete values as 0, then we run a logistic regression:
+
+```{r, results='hide',warning = FALSE, message = FALSE}
+#list the variables you want to test
+miss_var_list = c("eq5d0", "bmi", "ethnic", "imdscore","smoking")
 complete_var  = c("age", "sex", "retired", "ohsdiff","side","occupation")
 
-for (v in 1:length(test_var_list)){
- test_var = ifelse(is.na(data[[test_var_list[v]]]), 1,0 )
- test = glm(test_var ~ ., data=data[complete_var] )
-  print(paste("Tested variable: ", test_var_list[v], sep="")) 
-  print(summary(test))   #Check p_value
+for (v in 1:length(miss_var_list)){
+ miss_var = ifelse(is.na(data[[miss_var_list[v]]]), 1, 0)
+ test = glm(miss_var ~ ., data=data[complete_var] )
+ print(paste("Tested variable: ", miss_var_list[v], sep="")) 
+ print(summary(test))   #Check p_value
 }
 ```
 
-Alternative, we can use the function na.test() from the package misty:
-This function tests all your dataset. If the output is a significant p
-value (p\<0.05), you can reject the null hypothesis that the data is
-"Missing Completely at Random" (MCAR) and you can impute. If p\>0.05,
-you can't reject the null hypothesis, therefore, your data might be MCAR
-unless you think is possible/suspect that a variable not recorded in
-your data could explain the missingness.
+3.  Alternative, we can use the function na.test() from the package
+    misty: This function tests all your data set.
+
+-   If the output is statistically significant p-value (p≤0.05),
+    indicates that the result provides evidence against "Missing
+    Completely at Random" (MCAR) and therefore, the missing data are MAR
+    or MNAR. In this situation, complete cases analysis will give bias
+    results, therefore, you need to impute.
+-   If the result is not statistically significant p\>0.05, indicates
+    that the test is failing to reject the null hypothesis. But, it
+    doesn't prove that the data is MCAR, so data might or not be MCAR.
+    If you suspect that an unobserved variable/s may explain the
+    missingness of your data, you still need to impute your data,
+    assuming that it is MAR.
 
 <https://search.r-project.org/CRAN/refmans/misty/html/na.test.html#>:\~:text=Little%20(1988)%20proposed%20a%20multivariate,with%20the%20expected%20population%20means
 <https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-017-0442-1#ref-CR1>
@@ -182,8 +224,8 @@ your data could explain the missingness.
 ```{r, misty,warning = FALSE, message = FALSE}
 library(misty)
 
-na.test(data)
-
+#We are excluding 'id' from the dataset.
+na.test(within(data, rm(id)))
 ```
 
 ------------------------------------------------------------------------
@@ -224,18 +266,17 @@ missing data pattern.
 The mice package contains a function to inspect the missing data
 pattern: `md.pattern()`
 
-```{r mice, warning = FALSE, message = FALSE}
+```{r, warning = FALSE, message = FALSE}
 
 #Selecting variables with missing data
-missvars <- c( "eq5d0","height", "weight", "satisfaction", "ethnic","imdscore",  "bmi", "smoking")
-missdata <- data[missvars]
+miss_vars <- c( "eq5d0", "ethnic","imdscore", "bmi", "smoking")
 
 #Exploring missing pattern with md.pattern() function
 #The md.pattern() function shipped with Multivariate Imputation by Chained Equations (MICE) package can be used to produce a table displaying the missing pattern.
 
 #install.package("mice")
 library(mice)
-md.pattern(missdata, plot=FALSE)
+md.pattern(data[miss_vars], plot=FALSE)
 
 ```
 
@@ -246,16 +287,15 @@ md.pattern(missdata, plot=FALSE)
 values "1" indicates non-missing value and "0" indicates missing value.
 The first column shows the number of unique missing data patterns.
 
-There are 228 observations with non-missing values, and there are 227
-observations with non-missing values except for the variable 'retired'.
-The rightmost column shows the number of missing variables in a
-particular missing pattern. For example, the first row has no missing
-value and it is "0" in the row. The last row counts the number of
-missing values for each variable. For example, the variable
-***imdscore*** contains 11 missing values and the variable ***bmi***
-contains 359 missing values. This table can be helpful when you decide
-to drop some observations with missing variables exceeding a preset
-threshold.
+There are 238 observations with non-missing values, and there are 4
+observations with non-missing values except for the variable 'bmi'. The
+rightmost column shows the number of missing variables in a particular
+missing pattern. For example, the first row has no missing value and it
+is "0" in the row. The last row counts the number of missing values for
+each variable. For example, the variable ***imdscore*** contains 11
+missing values and the variable ***bmi*** contains 359 missing values.
+This table can be helpful when you decide to drop some observations with
+missing variables exceeding a preset threshold.
 
 ```{r ggmice VIM, warning = FALSE, message = FALSE}
 #Visual presentation of missing data pattern
@@ -263,17 +303,24 @@ threshold.
 #We are using three different functions to display visually the patterns of the missing data in R: 
 
 #library(mice)
-md.pattern(missdata, plot=TRUE, rotate.names=TRUE)
+md.pattern(data[miss_vars], plot=TRUE, rotate.names=TRUE)
 
 #install.package("ggmice")
 library(ggmice)
-plot_pattern(missdata, vrb = "all", square = FALSE, rotate = TRUE, cluster = NULL)
+plot_pattern(data[miss_vars], vrb = "all", square = FALSE, rotate = FALSE, cluster = NULL)
 
 #install.packages("VIM")
 library(VIM)
-aggr(missdata, labels=names(data), numbers=FALSE, prop=TRUE)
+aggr(data[miss_vars], numbers=FALSE, prop=TRUE)
 
 ```
+
+There are around 50% missing values in bmi and ethnic, 32% of missing
+values in the variable smoking and less than 5% missing values in eq5d
+and in the index of multiple deprivation.
+
+You might decide to remove variables with a high number of missingness
+from the data set first as they might mess up the imputation.
 
 See more at: [Chapter 4 Multivariate missing
 data](https://stefvanbuuren.name/fimd/ch-multivariate.html){.uri}
@@ -288,15 +335,14 @@ data](https://stefvanbuuren.name/fimd/ch-multivariate.html){.uri}
 
 ```{r, results='hide', warning = FALSE, message=FALSE, fig.show='hide'}
 #list the variables you want to test
-test_var_list = c("age", "eq5d0", "height", "weight", "satisfaction", "bmi", "imdscore" )
+continuous_var = c("age", "eq5d0", "bmi", "imdscore" )
 outcome = "ohsdiff"
 
-for (v in 1:length(test_var_list)){
-  df = cbind(data[test_var_list[v]],outcome = data[[outcome]])
-  #df= as.data.frame(df) #remove tibble
-  test = lm(outcome ~ ., data = df)
+for (v in 1:length(continuous_var)){
+  df = cbind(data[continuous_var[v]],outcome = data[[outcome]])
+  linear_test = lm(outcome ~ ., data = df)
   par(mfrow = c(2, 2))
-  plot(test,main=paste(test_var_list[v],"\n",sep=""))
+  plot(linear_test,main=paste(continuous_var[v],"\n",sep=""))
 }
 ```
 
@@ -346,69 +392,47 @@ Main model:
     `ethnic`, `imdscore` , `smoking`
 
 ```{r ggcorrplot,warning = FALSE, message = FALSE}
+
 library(ggcorrplot)
-exclude = c("ohs6","height", "weight")
 
-missvars <- c( "eq5d0", "ethnic","imdscore","bmi", "smoking")
-
-exclude = c("ohs6","height", "weight", missvars)
+#list the variables you want to test
+miss_var_list = c("eq5d0", "ethnic", "imdscore", "bmi", "smoking")
+auxiliar_var  = c("retired", "satisfaction", "side", "occupation")
 
 #Generate a data frame where missing variables are codified by 0=non-missing value and 1=missing value:
-missdata_binary =  data %>% mutate(
+miss_data =  data %>% mutate(
   miss_eq5d0= ifelse(is.na(eq5d0),1,0), 
   miss_ethnic= ifelse(is.na(ethnic),1,0), 
   miss_imdscore= ifelse(is.na(imdscore),1,0), 
   miss_bmi=ifelse(is.na(bmi),1,0), 
   miss_smoking= ifelse(is.na(smoking),1,0) )
 
+corr_var = c("miss_eq5d0", "miss_ethnic", "miss_imdscore", "miss_bmi", "miss_smoking", auxiliar_var)
 
-
-model.matrix(~0+., data=missdata_binary[,-c(exclude)]) %>% 
+model.matrix(~0+., data=miss_data[corr_var]) %>% 
   cor(use="pairwise.complete.obs")  %>% 
   ggcorrplot(show.diag = F, type="lower", lab=TRUE, lab_size=2)
 
+
 ```
 
--   Which pairs of variables are have a correlation \> 0.4?
-
-    -   `"height" - "weight"` (*0.47*) and `"bmi" - "weight"` (*0.74*)
-        --\> *bmi* is calculated using *height* and *weight*.
-    -   `"ohsdiff" - "ohs0"` (*0.62*) and `"ohsdiff" - "ohs6"` (-*0.53*)
-        --\> we used *ohs0* and *ohs6* to generate *ohsdiff*
-    -   `"ohsdiff" - "eq5d0"` (*0.43*)
-    -   `"ohsdiff" - "occupation"` (*0.79*)
-    -   `"ohsdiff" - "satisfaction"` (-*0.51*)
-    -   `"ohs6" - "satisfaction"` (-*0.51*)
-    -   `"ohs6" - "occupation"` (-*0.40*)
-    -   `"ohs0" - "eq5d0"` (*0.75*)
-    -   `"ohs0" - "occupation"` (*0.51*)
-    -   `"age" - "retired"` (*0.69*)
-    -   `"sex" - "height"` (+/-*0.64*)
-    -   `"sex" - "weight"` (+/-*0.47*)
-
--   Which variables are very poorly correlated? (e.g., \<\|0.1\|)
-
-    -   `"id"` --\> It is randomly assigned, therefore, expected.
-    -   `"smoking"`
-    -   `"ethnic"`
+-   Which pairs of variables are have a correlation \> 0.4? None
 
 -   Think about which variables should be include in the multiple
-    imputation as auxiliaries but also which ones should not be
-    included.
+    imputation as auxiliaries (if any). None in this example.
 
-## 5. Interactions with sex
+## 5. Checking potential interactions
 
-To impute correctly the missing values, we need to include the
-interactions of our dataset variables. For instance, sex, age and bmi
-are typically associated: a younger person tends to have a lower bmi
-than an older person, and vice versa.
+If we suspect that there is an interaction in our main model, it should
+be included in the imputation.
 
-Thus, we must check the data interactions and then include them in the
-multiple imputation.
+Sex can be a potential effect modifier for bmi and ohsdiff. Thus, we
+must check the data interactions and then include them in the multiple
+imputation, if it is necessary.
 
-**Option 1:** R has the `interaction.plot()` function built-in. however,
-you can only test one linear variable vs two factors. Since bmi and age
-are linear, we will categorize bmi to run this function.
+R has the `interaction.plot()` function built-in. however, you can only
+test one numeric variable vs two factors. Since bmi and the outcome are
+numeric, we will categorise bmi to run this function.
 
 `interaction.plot()` arguments:
 
@@ -427,26 +451,29 @@ are linear, we will categorize bmi to run this function.
 
 ```{r, results='hide', warning = FALSE, message=FALSE}
 
-##1st.) Check AGE linearity:
-#As we saw previously in the q-q plot, age might not be linear. By ploting the histogram we can see if age distribution is skewed or not. 
+##1st.) Check outcome distribution:
+#By ploting the histogram we can see if the outcome distribution is skewed or not. 
 hist(data$ohsdiff)
-#If age has a normal distribution, use de mean, otherwise use the median (ie. fun = mean OR fun = median)
+#If the outcome has a normal distribution, use de mean, otherwise use the median (ie. fun = mean OR fun = median)
 
 ##2nd.A) Spliting bmi in 2 categories:
 bmi_2 = ifelse(data$bmi >= 25, "25+", "<25")
-#interaction.plot using median of AGE
+#interaction.plot using median of ohsdiff (outcome)
 interaction.plot(x.factor=bmi_2, trace.factor=data$sex, response=data$ohsdiff, fun = median,  col = c("#0198f9", "#f95801")) 
-#interaction.plot using mean of AGE
+
+#interaction.plot using mean of ohsdiff (outcome)
 interaction.plot(x.factor=bmi_2, trace.factor=data$sex, response=data$ohsdiff, fun = mean,  col = c("#0198f9", "#f95801")) 
 
 ##2nd.B) Spliting bmi in >2 categories:
 bmi_cat=with(data, cut(bmi, breaks = c(0,18.5,25,30,70), labels = c('underweight','normal', 'overweight', 'obese'),right=FALSE))
+
 #table(bmi_cat,data$sex)
 bmi_cat=with(data, cut(bmi, breaks = c(0,25,30,70), labels = c('<25', 'overweight', 'obese'),right=FALSE))
 
-#interaction.plot using median of AGE
+#interaction.plot using median of ohsdiff (outcome):
 interaction.plot(x.factor=bmi_cat, trace.factor=data$sex, response=data$ohsdiff, fun = median,  col = c("#0198f9", "#f95801")) 
-#interaction.plot using mean of AGE
+
+#interaction.plot using mean of ohsdiff (outcome):
 interaction.plot(x.factor=bmi_cat, trace.factor=data$sex, response=data$ohsdiff, fun = mean,  col = c("#0198f9", "#f95801"))
 ```
 
@@ -455,20 +482,19 @@ on the interaction plot are parallel then there is no interaction
 effect. However, if the lines intersect then there is likely an
 interaction effect.
 
-**Option 2: Fit the two-way ANOVA model or .** Since our bmi is linear
-but we had to categorize it to run the plot, we are going to double
-check the interaction through and anova.
+```{r, results='hide', warning = FALSE, message=FALSE}
 
-```{r}
-#fit the two-way ANOVA model
-model <- aov(bmi ~ sex * age, data = data)
-#view the model output
-summary(model)
+## Try test interaction with other independent variable. 
 
+##Categorise varX if needed:
+varX_cat = ifelse(data$varX >= value)
 
+#interaction.plot using median of ohsdiff (outcome):
+interaction.plot(x.factor=varX_cat, trace.factor=data$sex, response=data$ohsdiff, fun = median,  col = c("#0198f9", "#f95801")) 
+
+#interaction.plot using mean of ohsdiff (outcome):
+interaction.plot(x.factor=varX_cat, trace.factor=data$sex, response=data$ohsdiff, fun = mean,  col = c("#0198f9", "#f95801")) 
 ```
-
-Note that here the interaction
 
 ## 6. Choosing imputation methods.
 
@@ -488,25 +514,51 @@ pmm, truncreg, intreg, logit, ologit, mlogit, poisson and nbreg**.
 |   lda    |     Linear discriminant analysis     |       factor        |         |
 |  sample  | Random sample from the observed data |         any         |         |
 
--   Which variables we want to impute? EQ5D0, height, weight, bmi,
-    satisfaction, ethnic, imdscore
+-   Which variables we want to impute? EQ5D0, bmi, ethnic, imdscore and
+    smoking
 
-**The order of the variables that we want to impute is key if we want to
-use different methods:**
+The `mice` package assumes a distribution for each variable and imputes
+missing variables according to that distribution. Hence, it is important
+to correctly specify each of these distributions. `mice` automatically
+chooses distributions for variables.
 
-*Explanation of following three lines of the code*\
-3.1 See order of the variables we want to impute\
-3.2 Save the name of the variables ordered as they appear in the
-dataset\
-3.3 Include the method we want to use for imputing each variable
-([remember]{.underline}: following the previous order)
+If we would like to change the methods used to impute the missing
+values, we can do it by changing the methods\' characteristics.
+
+*You can follow the following three lines of the code*\
+3.1 Choose the variables we want to impute\
+3.2 Save the name of the variables that will be included in the
+imputation model\
+3.3 Check the imputation method used for each variable
 
 ```{r, results='hide', warning = FALSE}
+library(mice)
 names(data) #3.1
-imp_list=c("eq5d0","height","weight","satisfaction","bmi","ethnic","imdscore")#3.2
-methods=c("eq5d0","height","weight","satisfaction","bmi","ethnic","imdscore") #3.3
+impmodel_var=c("age","sex","ohs0","ohsdiff","ethnic","eq5d0","bmi","imdscore","smoking")#3.2
 
-#####anyadir 
+# We run the mice code with 0 iterations 
+imp <- mice(data[impmodel_var], m=5, maxit=0)
+imp$method #3.2
+
+#In this example, mice identifies the correct distribution for each variable. But, if for example, if you want to change the method used for bmi, you can do the following:
+
+meth <- imp$method
+
+# Numeric variables - normal distribution (we are using "Linear regression, non-Bayesian" method to impute bmi)
+norm <- c("bmi")
+# Numeric variables - non-normal distribution
+nonnorm <- c("eq5d0", "imdscore")
+# Dichotomous variable
+log <- c("ethnic", "smoking")
+
+# Turn their methods matrix into the specified imputation models
+meth[norm] <- "norm.nob"
+meth[nonnorm] <- "pmm"
+meth[log] <- "logreg"
+
+
+imp2 <- mice(data[impmodel_var], m=5, maxit = 0, method = meth)
+imp2$method
 ```
 
 ## 7. Imputations with mice (Multivariate Imputation by Chained Equations)
@@ -525,15 +577,23 @@ as following:\
 where:
 
 -   data: your data frame
+
 -   maxit: is the number of iterations for each imputation. The default
     is 5. It is important that the imputations for all variables reach
     convergence, otherwise they will be inaccurate.
+
 -   m: number of multiple imputations (multiple datasets returned by the
-    function). The default is 5. Generally the more the better, but then
-    the analysis takes longer to run and it consume more computational
-    resources. A thumb up rule regarding the percentage of missingness
-    is commonly used: if there is a 10% of missing, include 10
-    imputations; if there is a 20% missing, run 20 imputations, etc.
+    function). The observed data will be the same across the imputed
+    data sets; only the values that had originally been missing will
+    differ. The default number of imputations is 5. Generally the more
+    the better, but then the analysis takes longer to run and it consume
+    more computational resources. A thumb up rule regarding the
+    percentage of missingness is commonly used: if there is a 10% of
+    missing, include 10 imputations; if there is a 20% missing, run 20
+    imputations, etc.
+
+    Although, we have over 50% of missing values in ethnic and bmi, we
+    will use the default (m=5) in this example to save time.
 
 When using the mice package, the steps for your analysis are the
 following:
@@ -570,16 +630,11 @@ the pool.compare() function.
 
 We create the impute datasets with the function `mice`:
 
-```{r mice, results='hide', warning = FALSE, message=FALSE}
-library(mice)
-imp = mice(data, maxit=10, m = 50)  #7.1
-```
+```{r, results='hide', warning = FALSE, message=FALSE}
+impmodel_var=c("age","sex","ohs0","ohsdiff","ethnic","eq5d0","bmi","imdscore","smoking")#3.2
 
-On the mice command line we can use the `m` option to specify the number
-of imputations to be performed. In this example we chose 5 imputations.
-
-```{r, results='hide', warning = FALSE}
-fit = with(data=imp,expr = lm(ohsdiff~age+sex+bmi+eq5d0+ethnic+imdscore+smoking+occupation+ohs0)) #7.2
+imp = mice(data[impmodel_var], maxit=10, m = 5)  #7.1
+fit = with(data=imp,expr = lm(ohsdiff~age+sex+bmi+eq5d0+ethnic+imdscore+smoking+ohs0)) #7.2
 summary(pool(fit), conf.int = TRUE) #7.3
 ```
 
@@ -588,7 +643,7 @@ summary(pool(fit), conf.int = TRUE) #7.3
 ```{r, results='hide', warning = FALSE}
 # create the impute datasets
 imp = mice(data, maxit=10, m = 5)  #7.1
-fit = with(data=imp,expr = lm(ohsdiff~age+sex+bmi+eq5d0+ethnic+imdscore+smoking+occupation+ohs0)) #7.2
+fit = with(data=imp,expr = lm(ohsdiff~age+sex+bmi+eq5d0+ethnic+imdscore+smoking+ohs0)) #7.2
 summary(pool(fit), conf.int = TRUE) #7.3
 ```
 
@@ -612,13 +667,15 @@ the list created in the previous step.\
 9.7 Pool the results
 
 ```{r, results='hide', warning = FALSE}
-imp = mice(data, maxit=10, m = 5)   #9.1
+impmodel_var=c("age","sex","ohs0","ohsdiff","ethnic","eq5d0","bmi","imdscore","smoking")#3.2
+
+imp = mice(data[impmodel_var], maxit=10, m = 5)   #9.1
 imp.data = complete(imp , "long")   #9.2
 table(imp.data$.imp)                #9.3
 Fit.list = vector("list", length(unique(imp.data$.imp))) #9.4
 Fit.list2= vector("list", length(unique(imp.data$.imp))) #9.4
 for (i in unique(imp.data$.imp)) {  #9.5 Loop start
-      fit = lm(ohsdiff~age+sex+ethnic+imdscore, data = imp.data[imp.data$.imp == i,])
+      fit = lm(ohsdiff~age+sex+ethnic+eq5d0+imdscore+bmi+smoking+ohs0, data = imp.data[imp.data$.imp == i,])
       Fit.list[[i]]= summary(fit)
                                   } #9.5
 Fit.list.mira = as.mira(Fit.list)   #9.6 Loop end
