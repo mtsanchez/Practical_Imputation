@@ -1,5 +1,5 @@
 ---
-title: "Multiple IMputation example code"
+title: "Multiple Imputation in R"
 author: "Maria Sanchez and Marta Pineda-Moncusi"
 date: "`r Sys.Date()`"
 output:
@@ -20,12 +20,27 @@ rm(list=ls())
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Tutorial for multiple imputation in R
+# Tutorial for Multiple Imputation in R
 
-The purpose of this practical is to discuss commonly used techniques for
+## Introduction
+
+Missing data (or missing values) is defined as the data value that is
+not stored for a variable in the observation of interest. The problem of
+missing data is relatively common in almost all research and can have a
+significant effect on the conclusions that can be drawn from the data.
+
+A common misconception of missing data methods is the assumption that
+imputed values should represent "real" values. The purpose when
+addressing missing data is to correctly reproduce the
+variance/covariance matrix we would have observed if our data had not
+any missing information.
+
+The aim of this practical is to discuss commonly used techniques for
 handling missing data and common issues that could arise when these
 techniques are used. We will focus on one of the most popular methods,
-multiple imputation.
+**multiple imputation**. But, depending on the type of data and model
+you will be using, other techniques such as direct maximum likelihood
+may better serve your needs.
 
 We will use the data set ***hip.csv***. This data set is made up for
 this practical. The R code for this practical was developed using R
@@ -70,11 +85,6 @@ worked and 0 if not. The Index of Multiple Deprivation is a measure of
 social deprivation, linked to the area a patient lives in (variable
 `imdscore`)
 
--   The outcome/dependent variable (*Y*) for this study is `ohsdiff` =
-    change in ohs before and after surgery
--   The independent variables (*X's*) are = `age`, `sex`, `ethnic`,
-    `imdscore` , `bmi`, `smoking` , `eq5d0` and `ohs0`
-
 ```{r dplyr, results='hide', warning = FALSE, message = FALSE}
 
 #install.packages("dplyr")
@@ -92,9 +102,6 @@ setwd(folder_path)}
 #load data
 data <- read.csv("hip.csv", sep=',')
 
-#Export 
-#write.csv(data,"hip.csv", row.names = FALSE)
-
 
 #Display the names of variables in the data set.
 names(data)
@@ -108,13 +115,14 @@ data = data %>%
                  smoking = factor(smoking, levels = c(0,1), labels = c("Non-smoker","Smoker")),
                  occupation = factor(data$occupation, levels = c(0,1), labels = c("Non-manual worker","Manual worker")) )
 
-
 #Observe/explore the data
 dim(data)
 summary(data)
 ```
 
-Check the structure of the data:
+**Quiz**
+
+[*Check the structure of the data*]{.underline}:
 
 -   How many cases (individuals) are in the data? 708
 
@@ -125,11 +133,8 @@ Check the structure of the data:
 
 -   Which are factor? sex, retired, ethnic, side, smoking and occupation
 
--   Is there any variable with missing? EQ5D0, height, weight, bmi,
-    satisfaction, ethnic, imdscore and smoking
-
--   Which is the variable with higher number of missing data? and which
-    is the %? ethnic (\>50%)
+-   Is there any variable with missing values? Yes. EQ5D0, height,
+    weight, bmi, satisfaction, ethnic, imdscore and smoking
 
 -   Describe the outcome: Mean (-18.6), Median (Range): -19 (-43-19).
     Mean and median values are very close, so we can think that the
@@ -140,15 +145,20 @@ Check the structure of the data:
 
     ------------------------------------------------------------------------
 
-## 1. Exploring missing data mechanisms
+## Exploring missing data mechanisms
+
+There are three typical mechanisms causing missing data:
 
 -   Missing completely at random (MCAR): The probability of data being
     missing is the same for all cases (not depend on the observed or
     unobserved data)
-
+    -   In the presence of MCAR, complete cases analysis will not
+        results in biased parameter estimates (e.g. regression
+        coefficients)
 -   Missing at random (MAR): The probability of data being missing is
-    the same only within groups defined by the observed data
-
+    the same only within groups defined by the observed data.
+    -   In the presence of MAR, **multiple imputation** methdos may lead
+        to unbiased results
 -   Missing not at random (MNAR): The probability of data being missing
     varies for reasons that are unknown to us or does depend on the
     unobserved data, conditional on the observed data
@@ -158,9 +168,8 @@ Check the structure of the data:
 To explore the mechanism of the missing data in our data set, we can
 check if missingnes are associated with completed variables.
 
-There are three different ways to check it:
-
-1.  Correlation matrix
+1.  We can check if missing values are associated to observed variables
+    using a correlation matrix:
 
 ```{r, results='hide',warning = FALSE, message = FALSE, fig.show='hide'}
 #list the variables you want to test
@@ -183,9 +192,9 @@ model.matrix(~0+., data=miss_data[corr_var]) %>%
   ggcorrplot(show.diag = F, type="lower", lab=TRUE, lab_size=2)
 ```
 
--   What does the correlation between bmi and ethnic missingnes mean?
-    the correlation is 0.99, and that means that bmi and ethnic have
-    almost the same missing values.
+-   What is the correlation between bmi and ethnic missingnes? how does
+    it mean? The correlation is 0.99, and that means that the variables
+    bmi and ethnic have almost the same missing values.
 
 2.  Create a dummy variable/s where missing values are classified as 1
     and complete values as 0, then we run a logistic regression:
@@ -206,21 +215,6 @@ for (v in 1:length(miss_var_list)){
 3.  Alternative, we can use the function na.test() from the package
     misty: This function tests all your data set.
 
--   If the output is statistically significant p-value (p≤0.05),
-    indicates that the result provides evidence against "Missing
-    Completely at Random" (MCAR) and therefore, the missing data are MAR
-    or MNAR. In this situation, complete cases analysis will give bias
-    results, therefore, you need to impute.
--   If the result is not statistically significant p\>0.05, indicates
-    that the test is failing to reject the null hypothesis. But, it
-    doesn't prove that the data is MCAR, so data might or not be MCAR.
-    If you suspect that an unobserved variable/s may explain the
-    missingness of your data, you still need to impute your data,
-    assuming that it is MAR.
-
-<https://search.r-project.org/CRAN/refmans/misty/html/na.test.html#>:\~:text=Little%20(1988)%20proposed%20a%20multivariate,with%20the%20expected%20population%20means
-<https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-017-0442-1#ref-CR1>
-
 ```{r, misty, results='hide',warning = FALSE, message = FALSE}
 library(misty)
 
@@ -228,9 +222,104 @@ library(misty)
 na.test(within(data, rm(id)))
 ```
 
+[*Interpretation of the function na.test()*]{.underline}*:*
+
+If the output is statistically significant p-value (p≤0.05), indicates
+that the result provides evidence against "Missing Completely at Random"
+(MCAR) and therefore, the missing data are MAR or MNAR. In this
+situation, complete cases analysis will give bias results, therefore,
+you need to impute.
+
+If the result is not statistically significant p\>0.05, indicates that
+the test is failing to reject the null hypothesis. But, it doesn't prove
+that the data is MCAR, so data might or not be MCAR. If you suspect that
+an unobserved variable/s may explain the missingness of your data, you
+still need to impute your data, assuming that it is MAR.
+
 ------------------------------------------------------------------------
 
-## 2. Missing value patterns
+## Multiple Imputation in R
+
+Multiple imputation is a simulation-based statistical technique for
+handling missing data. It is now accepted as the best general method to
+deal with incomplete data. Multiple imputation was developed by Donal B.
+Rubin in the 1970's.
+
+### 1. Procedure
+
+Multiple imputation creates more than one complete data sets (m). Each
+of these data sets is analysed by standard analysis software. The m
+results are pooled into a final point estimate plus standard error by
+pooling rules ("Ruben's rules").
+
+Multiple imputation consists of three steps: imputation, analysis and
+pooling.
+
+![](images/Multiple%20imputation%20steps.png)
+
+-   *Imputed data:* it creates several complete data (m) sets where
+    missing values are replaced by plausible data values. Plausible
+    values are taken from the distribution modeled for each missing
+    entry.
+
+-   *Analysis results:* it estimates the parameters of interest from
+    each imputed data set.
+
+-   *Pooled results:* it pools the m parameter estimates into one
+    estimate, and to estimate the variance. The variance combines the
+    "within-imputation variance" and the "between-imputation variance".
+
+    ------------------------------------------------------------------------
+
+### 2. Preparing to conduct Multiple Imputation
+
+> **NOTE:** The standard implementation of multiple imputation is based
+> on the assumption of data being at least MAR.
+
+When developing your imputation model, it is important to assess if your
+imputation model is consistent with your analytic model. Consistency
+means that your imputation model includes (at the very least) the same
+variables that are in your analytic or estimation model. This also
+includes any transformations to variables (e.g. log transformations,
+interactions) that will be needed to assess your hypothesis of interest.
+
+For example, if the analytic model has significant interactions, then
+the imputation model should include them as well, if the analytic model
+uses a transformed version of a variable then the imputation model
+should use the same transformation.
+
+Our analytic model contains:
+
+-   The outcome/dependent variable (*Y*) is `ohsdiff` = change in ohs
+    before and after surgery
+-   The independent variables (*X's*) are = `age`, `sex`, `ethnic`,
+    `imdscore` , `bmi`, `smoking` , `eq5d0` and `ohs0`
+
+We are going to follow the next steps to built the imputation model:
+
+#### 2.1. Examine the number of missing values among your variables of interest
+
+We use the command `summary` command to count the number of missing
+observations of missing for each variable of interest
+
+```{r, results='hide',warning = FALSE, message = FALSE}
+
+#Selecting variables of interest
+analytic_model <- c("ohsdiff","age", "sex", "ethnic", "eq5d0", "imdscore", "bmi", "smoking", "ohs0")
+
+#Observe/explore number of missing data
+summary(data[analytic_model])
+
+```
+
+**Quiz**
+
+-   Which is the variable with higher number of missing data? and which
+    is the %? ethnic (\>50%)
+
+| **NOTE**: At this point, you can decide if you want to remove variables with a high number of missingness from the analytic model, and therefore, for the imputation model, as they might mess up the imputation.
+
+#### 2.2. Missing value patterns
 
 Types of missing data patterns:[![Some missing data patterns in
 multivariate data. Blue is observed, red is
@@ -263,6 +352,8 @@ are potentially more powerful if they have are non-missing in rows that
 are vastly incomplete. This section discusses various measures of the
 missing data pattern.
 
+R has several functions to inspect the missing data pattern.
+
 The mice package contains a function to inspect the missing data
 pattern: `md.pattern()`
 
@@ -272,9 +363,6 @@ pattern: `md.pattern()`
 miss_vars <- c( "eq5d0", "ethnic","imdscore", "bmi", "smoking")
 
 #Exploring missing pattern with md.pattern() function
-#The md.pattern() function shipped with Multivariate Imputation by Chained Equations (MICE) package can be used to produce a table displaying the missing pattern.
-
-#install.package("mice")
 library(mice)
 md.pattern(data[miss_vars], plot=FALSE)
 
@@ -283,117 +371,80 @@ md.pattern(data[miss_vars], plot=FALSE)
 -   Can you please interpreter the output table? what do you think it is
     displaying?
 
-**Interpreation of the table In the main body of the output table** The
-values "1" indicates non-missing value and "0" indicates missing value.
-The first column shows the number of unique missing data patterns.
+[*Interpretation of the output table:*]{.underline}
+
+In the main body of the output table the values "1" indicates
+non-missing value and "0" indicates missing value. The first column
+shows the number of unique missing data patterns.
 
 There are 238 observations with non-missing values, and there are 4
-observations with non-missing values except for the variable 'bmi'. The
+observations with non-missing values except for the variable `bmi`. The
 rightmost column shows the number of missing variables in a particular
 missing pattern. For example, the first row has no missing value and it
 is "0" in the row. The last row counts the number of missing values for
-each variable. For example, the variable ***imdscore*** contains 11
-missing values and the variable ***bmi*** contains 359 missing values.
-This table can be helpful when you decide to drop some observations with
-missing variables exceeding a preset threshold.
+each variable. For example, the variable `imdscore` contains 11 missing
+values and the variable `bmi` contains 359 missing values. This table
+can be helpful when you decide to drop some observations with missing
+variables exceeding a preset threshold.
 
-```{r ggmice VIM, results='hide', warning = FALSE, message = FALSE}
-#Visual presentation of missing data pattern
+***Visual presentation of missing data pattern:***
 
-#We are using three different functions to display visually the patterns of the missing data in R: 
+We are using three different R functions to display visually the
+patterns of the missing data:
 
-#library(mice)
+```{r ggmice VIM, results='hide', warning = FALSE, message = FALSE, fig.show='hide'}
+
+library(mice)
+library(ggmice)
+library(VIM)
+
 md.pattern(data[miss_vars], plot=TRUE, rotate.names=TRUE)
 
-#install.package("ggmice")
-library(ggmice)
 plot_pattern(data[miss_vars], vrb = "all", square = FALSE, rotate = FALSE, cluster = NULL)
 
-#install.packages("VIM")
-library(VIM)
 aggr(data[miss_vars], numbers=FALSE, prop=TRUE)
 
 ```
+
+[*Interpretation of the plots:*]{.underline}
 
 There are around 50% missing values in bmi and ethnic, 32% of missing
 values in the variable smoking and less than 5% missing values in eq5d
 and in the index of multiple deprivation.
 
-You might decide to remove variables with a high number of missingness
-from the data set first as they might mess up the imputation.
-
 See more at: [Chapter 4 Multivariate missing
 data](https://stefvanbuuren.name/fimd/ch-multivariate.html){.uri}
+
+**Quiz**
 
 -   What type of missing data pattern you think we have in our data set?
 
     The displayed patterns are non-monotone (i.e., general).
 
-    ------------------------------------------------------------------------
-
-## 3. Checking linear relationship between numeric variables and outcome.
-
-```{r, results='hide', warning = FALSE, message=FALSE, fig.show='hide'}
-#list the variables you want to test
-continuous_var = c("age", "eq5d0", "bmi", "imdscore" )
-outcome = "ohsdiff"
-
-for (v in 1:length(continuous_var)){
-  df = cbind(data[continuous_var[v]],outcome = data[[outcome]])
-  linear_test = lm(outcome ~ ., data = df)
-  par(mfrow = c(2, 2))
-  plot(linear_test,main=paste(continuous_var[v],"\n",sep=""))
-}
-```
-
-[How to interpret the plots]{.underline}:\
-The diagnostic plots show residuals in four different ways\
-\> **Residuals vs Fitted: Used to check the linear relationship
-assumptions.** A horizontal line, without distinct patterns is an
-indication for a linear relationship, what is good.\
-\> Normal Q-Q: Used to examine whether the residuals are normally
-distributed. It's good if residuals points follow the straight dashed
-line.\
-\> Scale-Location (or Spread-Location): Used to check the homogeneity of
-variance of the residuals (homoscedasticity). Horizontal line with
-equally spread points is a good indication of homoscedasticity.\
-\> Residuals vs Leverage: Used to identify influential cases, that is
-extreme values that might influence the regression results when included
-or excluded from the analysis.
-
--   Is it linear? if it is not, what do your think we should do?
-
--   Which variables does follow a normal distribution?
-
--   Which variables does not follow a normal distribution?
-
--   What should we do? Transform the variables. Simplest e.g.
-    Categorization
-
-    ------------------------------------------------------------------------
-
-## 4. If necessary, identify potential auxiliary variables
+#### 2.3. If necessary, identify potential auxiliary variables
 
 Auxiliary variables are variables in your data set that are either
 correlated with a missing variable(s) (the recommendation is r \>
 \|0.4\|) or are believed to be associated with missingness. These are
-factors that are not of particular interest in your analytic model , but
-they are added to the imputation model to increase power and/or to help
-make the assumption of MAR more plausible.
+factors that are not of particular interest in your analytic/main model
+, but they are added to the imputation model to increase power and/or to
+help make the assumption of MAR more plausible.
 
-Explore missingness vs potential auxiliary variables (variables non
+Explore missingness versus potential auxiliary variables (variables non
 included in our main model):
 
-Main model:
+Analytic/main model:
 
--   The outcome/dependent variable (*Y*) for this study is `ohsdiff` =
-    change in ohs before and after surgery
--   The independent variables (*X's*) are = `age`, `sex`, `bmi`,
+-   The **outcome** or **dependent variable** (*Y*) for this study is
+    `ohsdiff` = change in ohs before and after surgery
+-   The **independent variables** (*X's*) are = `age`, `sex`, `bmi`,
     `ethnic`, `imdscore` , `smoking`
 
 ```{r ggcorrplot, results='hide',warning = FALSE, message = FALSE, fig.show='hide'}
-
 library(ggcorrplot)
+
+#explore which other variables we have available in the data set
+names(data)
 
 #list the variables you want to test
 miss_var_list = c("eq5d0", "ethnic", "imdscore", "bmi", "smoking")
@@ -412,27 +463,83 @@ corr_var = c("miss_eq5d0", "miss_ethnic", "miss_imdscore", "miss_bmi", "miss_smo
 model.matrix(~0+., data=miss_data[corr_var]) %>% 
   cor(use="pairwise.complete.obs")  %>% 
   ggcorrplot(show.diag = F, type="lower", lab=TRUE, lab_size=2)
-
-
 ```
 
--   Which pairs of variables are have a correlation \> 0.4? None
+You need to think about which variables should be include in the
+multiple imputation as auxiliaries (if any).
 
--   Think about which variables should be include in the multiple
-    imputation as auxiliaries (if any). None in this example.
+[**Quiz**]{.underline}
 
-## 5. Checking potential interactions
+-   Which pairs of variables have a correlation \> 0.4? None
 
-If we suspect that there is an interaction in our main model, it should
-be included in the imputation.
+#### 2.4. Missing variables with non-linear effects and interactions
 
-Sex can be a potential effect modifier for bmi and ohsdiff. Thus, we
-must check the data interactions and then include them in the multiple
-imputation, if it is necessary.
+There is often a need for transformed, combined or recoded versions of
+the data. In the case of incomplete data, one could impute the original,
+and transform the completed original afterwards, or transform the
+incomplete original and impute the transformed version.
 
-R has the `interaction.plot()` function built-in. however, you can only
-test one numeric variable vs two factors. Since bmi and the outcome are
-numeric, we will categorise bmi to run this function.
+##### 2.4.1. Checking non-linear effect between numeric variables and outcome.
+
+If we know that there is evidence of a non-linear association between a
+numeric variable and the outcome, we should check it and transform the
+variable (if needed):
+
+```{r, results='hide', warning = FALSE, message=FALSE, fig.show='hide'}
+#List of the variables you want to test (numeric variables)
+num_var = c("age", "eq5d0", "bmi", "imdscore" )
+outcome = "ohsdiff"
+
+for (v in 1:length(num_var)){
+  df = cbind(data[num_var[v]],outcome = data[[outcome]])
+  linear_test = lm(outcome ~ ., data = df)
+  par(mfrow = c(2, 2))
+  plot(linear_test,main=paste(num_var[v],"\n",sep=""))
+}
+```
+
+[*Interpretation of the plots:*]{.underline}
+
+The diagnostic plots show residuals in four different ways
+
+-   *Residuals vs Fitted*: Used to check the linear relationship
+    assumptions. A horizontal line, without distinct patterns is an
+    indication for a linear relationship, what is good.
+-   *Normal Q-Q*: Used to examine whether the residuals are normally
+    distributed. It's good if residuals points follow the straight
+    dashed line.
+-   *Scale-Location (or Spread-Location)*: Used to check the homogeneity
+    of variance of the residuals (homoscedasticity). Horizontal line
+    with equally spread points is a good indication of homoscedasticity.
+-   *Residuals vs Leverage*: Used to identify influential cases, that is
+    extreme values that might influence the regression results when
+    included or excluded from the analysis.
+
+[**Quiz**]{.underline}
+
+-   Is the relationship between independent numeric variables and
+    outcome linear? if it is not, what do your think we should do?
+    Transform the variables. Simplest e.g. Categorization
+
+-   Which variables does follow a normal distribution?
+
+-   Which variables does not follow a normal distribution?
+
+##### 2.4.2. Checking potential interaction effects
+
+An interaction effect occurs when the effect of one variable on outcome
+depends on the value of another variable. If we suspect that there is an
+interaction in our analytic model, it should be included in the
+imputation model.
+
+Based on previous literature, `sex` can be a potential effect modifier
+of the relationship between `bmi` and `ohsdiff` (outcome). Thus, we
+should check if the interaction effect exists and then include it in the
+imputation model.
+
+R has the `interaction.plot()` function built-in, however, you can only
+test one numeric variable vs two factors. Since `bmi` and the `outcome`
+are numeric, we will categorise `bmi` to run this function.
 
 `interaction.plot()` arguments:
 
@@ -451,23 +558,23 @@ numeric, we will categorise bmi to run this function.
 
 ```{r, results='hide', warning = FALSE, message=FALSE, fig.show='hide'}
 
-##1st.) Check outcome distribution:
+##1) Check outcome distribution:
 #By ploting the histogram we can see if the outcome distribution is skewed or not. 
 hist(data$ohsdiff)
 #If the outcome has a normal distribution, use de mean, otherwise use the median (ie. fun = mean OR fun = median)
 
-##2nd.A) Spliting bmi in 2 categories:
+##2.A) Spliting bmi in 2 categories:
 bmi_2 = ifelse(data$bmi >= 25, "25+", "<25")
+
 #interaction.plot using median of ohsdiff (outcome)
 interaction.plot(x.factor=bmi_2, trace.factor=data$sex, response=data$ohsdiff, fun = median,  col = c("#0198f9", "#f95801")) 
 
 #interaction.plot using mean of ohsdiff (outcome)
 interaction.plot(x.factor=bmi_2, trace.factor=data$sex, response=data$ohsdiff, fun = mean,  col = c("#0198f9", "#f95801")) 
 
-##2nd.B) Spliting bmi in >2 categories:
+##2.B) Spliting bmi in >2 categories:
 bmi_cat=with(data, cut(bmi, breaks = c(0,18.5,25,30,70), labels = c('underweight','normal', 'overweight', 'obese'),right=FALSE))
 
-#table(bmi_cat,data$sex)
 bmi_cat=with(data, cut(bmi, breaks = c(0,25,30,70), labels = c('<25', 'overweight', 'obese'),right=FALSE))
 
 #interaction.plot using median of ohsdiff (outcome):
@@ -476,11 +583,6 @@ interaction.plot(x.factor=bmi_cat, trace.factor=data$sex, response=data$ohsdiff,
 #interaction.plot using mean of ohsdiff (outcome):
 interaction.plot(x.factor=bmi_cat, trace.factor=data$sex, response=data$ohsdiff, fun = mean,  col = c("#0198f9", "#f95801"))
 ```
-
-[How to interpret the plots]{.underline}: In general, if the two lines
-on the interaction plot are parallel then there is no interaction
-effect. However, if the lines intersect then there is likely an
-interaction effect.
 
 ```{r, results='hide', warning = FALSE, message=FALSE, fig.show='hide'}
 
@@ -496,7 +598,82 @@ interaction.plot(x.factor=varX_cat, trace.factor=data$sex, response=data$ohsdiff
 interaction.plot(x.factor=varX_cat, trace.factor=data$sex, response=data$ohsdiff, fun = mean,  col = c("#0198f9", "#f95801")) 
 ```
 
-## 6. Choosing imputation methods.
+[*Interpretation the plots*]{.underline}*:*
+
+In general, if the two lines on the interaction plot are parallel then
+there is no interaction effect. However, if the lines intersect then
+there is likely an interaction effect.
+
+**Quiz**
+
+Do you think that `sex` is an effect modifier of the relationship
+between `bmi` and `ohsdiff`? No, it is not
+
+##### 2.4.3. **How do I treat variable transformations such as logs, quadratics and interactions?**
+
+Most of the current literature on multiple imputation supports the
+method of treating variable transformations as "just another variable"
+(mainly if the analysis model is linear regression).
+
+But, if you want to maintain the property of your data in the resulting
+imputed values, **mice** package in R (*further details in*
+[RDocumentation](https://www.rdocumentation.org/packages/mice/versions/3.14.0/topics/mice)
+*or typing* help(mice) *in your console*) has a built-in approach,
+called *passive imputation*, to deal with situations as described above.
+The goal of passive imputation is to maintain the consistency among
+different transformations of the same data.
+
+  ------------------------------------------------------------------------
+
+### 3. Imputations with mice (Multivariate Imputation by Chained Equations)
+
+The **mice** package (*further details in*
+[RDocumentation](https://www.rdocumentation.org/packages/mice/versions/3.14.0/topics/mice)
+*or typing* help(mice) *in your console*) implements a method to
+complete missing data based on Fully Conditional Specification, where
+each incomplete variable is imputed by a separate model. Then name of
+this function is the same than the package (i.e., `mice()` )
+
+A simple version of the code for running the mice() function can looks
+as following:\
+**mice(data, maxit=10, m = 5,seed=60109)**
+
+where:
+
+-   data: your data frame
+
+-   maxit: is the number of iterations for each imputation. The default
+    is 5. It is important that the imputations for all variables reach
+    convergence, otherwise they will be inaccurate.
+
+-   m: number of multiple imputations (multiple data sets returned by
+    the function). The observed data will be the same across the imputed
+    data sets; only the values that had originally been missing will
+    differ. The default number of imputations is 5.
+
+When using the mice package, the steps for your analysis are the
+following:
+
+1.  First your create your m imputed data sets. (mice() - function)
+
+2.  Then you do your analysis on each of these data sets. (with() -
+    function)
+
+3.  In the end you combine these results together. (pool() - function)
+
+    ![](images/Steps_MI.png)
+
+#### 3.1. Selecting the number of imputations (*m*)
+
+Generally the more the better, but then the analysis takes longer to run
+and it consume more computational resources. A thumb up rule regarding
+the percentage of missingness is commonly used: if there is a 10% of
+missing, include 10 imputations; if there is a 20% missing, run 20
+imputations, etc.
+
+> NOTE: Although our data have more than 50% of missing values, we will use the default (m=5) in this example to save computation time.
+
+#### 3.2. Choosing imputation methods.
 
 There are nine methods available for imputing a variable: **regress,
 pmm, truncreg, intreg, logit, ologit, mlogit, poisson and nbreg**.
@@ -533,14 +710,19 @@ imputation model\
 
 ```{r, results='hide', warning = FALSE, message=FALSE}
 library(mice)
-names(data) #3.1
+
+##3.1) Choose the variables we want to include in the imputation model 
+names(data)
+
+##3.2) Select them
 impmodel_var=c("age","sex","ohs0","ohsdiff","ethnic","eq5d0","bmi","imdscore","smoking")#3.2
 
-# We run the mice code with 0 iterations 
-imp <- mice(data[impmodel_var], m=5, maxit=0)
-imp$method #3.2
+#We run the mice code with 0 iterations 
+imp <- mice(data[impmodel_var], m=5, maxit=0, seed=60109)
+#Check the method mice used to impute
+imp$method
 
-#In this example, mice identifies the correct distribution for each variable. But, if you want to change the method used for bmi, you can do the following:
+#mice has identified the correct distribution for each variable. But, if you want to change the method used, you can do the following:
 
 meth <- imp$method
 
@@ -556,58 +738,15 @@ meth[norm] <- "norm.nob"
 meth[nonnorm] <- "pmm"
 meth[log] <- "logreg"
 
+imp2 <- mice(data[impmodel_var], m=5, maxit = 0, method = meth, seed=60109)
 
-imp2 <- mice(data[impmodel_var], m=5, maxit = 0, method = meth)
+#Check that mice is using the specific method
 imp2$method
 ```
 
-## 7. Imputations with mice (Multivariate Imputation by Chained Equations)
+  ------------------------------------------------------------------------
 
-The **mice** package (*further details in*
-[RDocumentation](https://www.rdocumentation.org/packages/mice/versions/3.14.0/topics/mice)
-*or typing* help(mice) *in your console*) implements a method to
-complete missing data based on Fully Conditional Specification, where
-each incomplete variable is imputed by a separate model. Then name of
-this function is the same than the package (i.e., `mice()` )
-
-A simple version of the code for running the mice() function can looks
-as following:\
-**mice(data, maxit=10, m = 5)**
-
-where:
-
--   data: your data frame
-
--   maxit: is the number of iterations for each imputation. The default
-    is 5. It is important that the imputations for all variables reach
-    convergence, otherwise they will be inaccurate.
-
--   m: number of multiple imputations (multiple data sets returned by
-    the function). The observed data will be the same across the imputed
-    data sets; only the values that had originally been missing will
-    differ. The default number of imputations is 5. Generally the more
-    the better, but then the analysis takes longer to run and it consume
-    more computational resources. A thumb up rule regarding the
-    percentage of missingness is commonly used: if there is a 10% of
-    missing, include 10 imputations; if there is a 20% missing, run 20
-    imputations, etc.
-
-    Although, we have over 50% of missing values in ethnic and bmi, we
-    will use the default (m=5) in this example to save time.
-
-When using the mice package, the steps for your analysis are the
-following:
-
-1.  First your create your m imputed data sets. (mice() - function)
-
-2.  Then you do your analysis on each of these data sets. (with() -
-    function)
-
-3.  In the end you combine these results together. (pool() - function)
-
-    ![](images/Steps_MI.png)
-
-## 8. Pooling results
+### 4. Pooling results
 
 The pool() function combines the estimates from m repeated complete data
 analyses using Rubin's rules. The typical sequence of steps to do a
@@ -631,14 +770,16 @@ the pool.compare() function.
 We create the impute data sets with the function `mice`:
 
 ```{r, results='hide', warning = FALSE, message=FALSE}
-impmodel_var=c("age","sex","ohs0","ohsdiff","ethnic","eq5d0","bmi","imdscore","smoking")#3.2
+impmodel_var=c("age","sex","ohs0","ohsdiff","ethnic","eq5d0","bmi","imdscore","smoking")
 
-imp = mice(data[impmodel_var], maxit=10, m = 5)  #7.1
+imp = mice(data[impmodel_var], maxit=10, m = 5, seed=60109)  #7.1
 fit = with(data=imp,expr = lm(ohsdiff~age+sex+bmi+eq5d0+ethnic+imdscore+smoking+ohs0)) #7.2
 summary(pool(fit), conf.int = TRUE) #7.3
 ```
 
-## 9. Checking after imputation
+  ------------------------------------------------------------------------
+
+### 5. Checking after imputation
 
 We can observe which values has been imputed:
 
@@ -651,7 +792,7 @@ We can observe which values has been imputed:
 ```{r, results='hide', warning = FALSE, message = FALSE, fig.show='hide'}
 impmodel_var=c("age","sex","ohs0","ohsdiff","ethnic","eq5d0","bmi","imdscore","smoking")#3.2
 
-imp = mice(data[impmodel_var], maxit=10, m = 5)  #7.1
+imp = mice(data[impmodel_var], maxit=10, m = 5, seed=60109)  #7.1
 fit = with(data=imp,expr = lm(ohsdiff~age+sex+bmi+eq5d0+ethnic+imdscore+smoking+ohs0)) #7.2
 summary(pool(fit), conf.int = TRUE) #7.3
 
@@ -668,6 +809,8 @@ Evaluate differences between observed and imputed data:
 ```{r, results='hide', warning = FALSE, message = FALSE, fig.show='hide'}
 densityplot(imp) #blue line = observed data; red lines = imputed data 
 ```
+
+**Quiz**
 
 -   Do you think distributions match up well? Yes
 
@@ -733,14 +876,41 @@ print("Using complete cases")
 print( cbind(OR=summary(fit0)$coefficients[,1],confint(fit0)) )
 
 #Imputed results: variables names, OR, Low and High CI
+fit = with(data=imp,expr = lm(ohsdiff~age+sex+bmi+eq5d0+ethnic+imdscore+smoking+ohs0))
 print("Using imputed data")
 summary(pool(fit), conf.int = TRUE)[c(1,2,7,8)]
 
 ```
 
-Interpretation: After imputation, age is significant in our model. Results regarding all other variables seems to be consistent before and after imputation.
+Interpretation: After imputation, age is significant in our model.
+Results regarding all other variables seems to be consistent before and
+after imputation.
 
-## 10. What to do when a statistical analysis is not compatible with with() function
+-   *Averaging the data*: You might be tempted to average the multiply
+    imputed data, and analyze the averaged data as if it were complete.
+    This method yields incorrect standard errors, confidence intervals
+    and p-values, and thus should not be used if any form of statistical
+    testing or uncertainty analysis is to be done on the imputed data.
+    The reason is that the procedure ignores the between-imputation
+    variability, and hence shares all the drawbacks of single imputation
+
+-   *Stack imputed data*: creating m×n complete records by stacking the
+    imputed data, where each record is weighted by a factor 1/m, so that
+    the total sample size is equal to n. While the estimated regression
+    coefficients are unbiased, we cannot trust the standard errors,
+    t-values and so on. An advantage of stacking over averaging is that
+    it is easier to analyze categorical data. Although stacking can be
+    useful in specific contexts, like variable selection, in general it
+    is not recommended.
+
+<!-- -->
+
+  ------------------------------------------------------------------------
+  
+
+[**AVOID***:*]{.underline}
+
+### 6. What to do when a statistical analysis is not compatible with with() function
 
 There might be cases where an analysis is such complex that you won't be
 able to use the function with(). For this cases, the alternative is to
@@ -762,7 +932,7 @@ in the list created in the previous step.\
 ```{r, results='hide', warning = FALSE}
 impmodel_var=c("age","sex","ohs0","ohsdiff","ethnic","eq5d0","bmi","imdscore","smoking")#3.2
 
-imp = mice(data[impmodel_var], maxit=10, m = 5)   #9.1
+imp = mice(data[impmodel_var], maxit=10, m = 5, seed=60109)   #9.1
 imp.data = complete(imp , "long")   #9.2
 table(imp.data$.imp)                #9.3
 Fit.list = vector("list", length(unique(imp.data$.imp))) #9.4
@@ -773,25 +943,5 @@ for (i in unique(imp.data$.imp)) {  #9.5 Loop start
                                   } #9.5
 Fit.list.mira = as.mira(Fit.list)   #9.6 Loop end
 summary(pool(Fit.list.mira),conf.int = TRUE) #9.7
-
 ```
 
-[**AVOID***:*]{.underline}
-
--    [Averaging the data]{.underline}: You might be tempted to average
-    the multiply imputed data, and analyze the averaged data as if it
-    were complete. This method yields incorrect standard errors,
-    confidence intervals and p-values, and thus should not be used if
-    any form of statistical testing or uncertainty analysis is to be
-    done on the imputed data. The reason is that the procedure ignores
-    the between-imputation variability, and hence shares all the
-    drawbacks of single imputation
-
--   [Stack imputed data]{.underline}: creating m×n complete records by
-    stacking the imputed data, where each record is weighted by a factor
-    1/m, so that the total sample size is equal to n. While the
-    estimated regression coefficients are unbiased, we cannot trust the
-    standard errors, t-values and so on. An advantage of stacking over
-    averaging is that it is easier to analyze categorical data. Although
-    stacking can be useful in specific contexts, like variable
-    selection, in general it is not recommended.
