@@ -804,7 +804,7 @@ summary(pool(fit), conf.int = TRUE) #4.3
 
 ### 5. Checking after imputation
 
-####5.0 We can observe which values has been imputed:
+#### 5.0 We can observe which values has been imputed:
 
 -   The `stripplot()` is useful to study the distributions in data sets
     with a low number of data points.
@@ -827,9 +827,9 @@ stripplot(imp) #blue = observed data; red = imputed data
 bwplot(imp)    #blue = observed data; red = imputed data
 ```
 
-####5.1 Evaluate differences between observed and imputed data:
+#### 5.1 Evaluate differences between observed and imputed data:
 
-#####5.1.1.  Observe their distribution before (observed) and after (imputed
+##### 5.1.1.  Observe their distribution before (observed) and after (imputed
     data):
 
 ```{r, results='hide', warning = FALSE, message = FALSE, fig.show='show'}
@@ -840,7 +840,7 @@ densityplot(imp) #blue line = observed data; red lines = imputed data
 
 -   Do you think distributions match up well? Yes
 
-#####5.1.2.  Compare the distributions of observed and imputed data conditional
+##### 5.1.2.  Compare the distributions of observed and imputed data conditional
     on the missingness probability.
 
 Interpretation is more difficult if discrepancies are shown in the
@@ -890,7 +890,7 @@ xyplot(imp, smoking ~ ps | as.factor(.imp),
 In this case, the distributions of the blue and red points are quite
 similar, as expected under MAR.
 
-#####5.1.3.  Compare complete results vs imputed results
+##### 5.1.3.  Compare complete results vs imputed results
 
 Observe the differences in the estimates and confidence intervals:
 

@@ -124,24 +124,17 @@ summary(data)
 
 [*Check the structure of the data*]{.underline}:
 
--   How many cases (individuals) are in the data? 708
+-   How many cases (individuals) are in the data?
 
--   How many variables do we have? 17
+-   How many variables do we have?
 
--   Which are numeric? age, oh0, oh6, ohsdiff, EQ5D0, height, weight,
-    satisfaction, bmi and imdscore
+-   Which are numeric?
 
--   Which are factor? sex, retired, ethnic, side, smoking and occupation
+-   Which are factor?
 
--   Is there any variable with missing values? Yes. EQ5D0, height,
-    weight, bmi, satisfaction, ethnic, imdscore and smoking
+-   Is there any variable with missing values?
 
--   Describe the outcome: Mean (-18.6), Median (Range): -19 (-43-19).
-    Mean and median values are very close, so we can think that the
-    distribution of the outcome is normal. You would like to check this
-    assumption with a density plot or histogram. The majority of
-    patients improved in terms of pain and function after surgery
-    (negative values).
+-   Describe the outcome:
 
     ------------------------------------------------------------------------
 
@@ -314,8 +307,7 @@ summary(data[analytic_model])
 
 **Quiz**
 
--   Which is the variable with higher number of missing data? and which
-    is the %? ethnic (\>50%)
+-   Which is the variable with higher number of missing data?
 
 | **NOTE**: At this point, you can decide if you want to remove variables with a high number of missingness from the analytic model, and therefore, for the imputation model, as they might mess up the imputation.
 
@@ -373,6 +365,14 @@ md.pattern(data[miss_vars], plot=FALSE)
 
 [*Interpretation of the output table:*]{.underline}
 
+<details>
+
+<summary>
+
+*Click to read the interpretation*
+
+</summary>
+
 In the main body of the output table the values "1" indicates
 non-missing value and "0" indicates missing value. The first column
 shows the number of unique missing data patterns.
@@ -386,6 +386,8 @@ each variable. For example, the variable `imdscore` contains 11 missing
 values and the variable `bmi` contains 359 missing values. This table
 can be helpful when you decide to drop some observations with missing
 variables exceeding a preset threshold.
+
+</details>
 
 ***Visual presentation of missing data pattern:***
 
@@ -408,6 +410,10 @@ aggr(data[miss_vars], numbers=FALSE, prop=TRUE)
 
 [*Interpretation of the plots:*]{.underline}
 
+<details>
+
+<summary> *Click to read the interpretation* </summary>
+
 There are around 50% missing values in bmi and ethnic, 32% of missing
 values in the variable smoking and less than 5% missing values in eq5d
 and in the index of multiple deprivation.
@@ -415,11 +421,12 @@ and in the index of multiple deprivation.
 See more at: [Chapter 4 Multivariate missing
 data](https://stefvanbuuren.name/fimd/ch-multivariate.html){.uri}
 
+</details>
+
+
 **Quiz**
 
 -   What type of missing data pattern you think we have in our data set?
-
-    The displayed patterns are non-monotone (i.e., general).
 
 #### 2.3. If necessary, identify potential auxiliary variables
 
@@ -470,7 +477,7 @@ multiple imputation as auxiliaries (if any).
 
 [**Quiz**]{.underline}
 
--   Which pairs of variables have a correlation \> 0.4? None
+-   Which pairs of variables have a correlation \> 0.4?
 
 #### 2.4. Missing variables with non-linear effects and interactions
 
@@ -519,7 +526,6 @@ The diagnostic plots show residuals in four different ways
 
 -   Is the relationship between independent numeric variables and
     outcome linear? if it is not, what do your think we should do?
-    Transform the variables. Simplest e.g. Categorization
 
 -   Which variables does follow a normal distribution?
 
@@ -600,14 +606,20 @@ interaction.plot(x.factor=varX_cat, trace.factor=data$sex, response=data$ohsdiff
 
 [*Interpretation the plots*]{.underline}*:*
 
+<details>
+
+<summary> *Click to read the interpretation* </summary>
+
 In general, if the two lines on the interaction plot are parallel then
 there is no interaction effect. However, if the lines intersect then
 there is likely an interaction effect.
 
+</details>
+
 **Quiz**
 
 Do you think that `sex` is an effect modifier of the relationship
-between `bmi` and `ohsdiff`? No, it is not
+between `bmi` and `ohsdiff`?
 
 ##### 2.4.3. **How do I treat variable transformations such as logs, quadratics and interactions?**
 
@@ -803,7 +815,7 @@ summary(pool(fit), conf.int = TRUE) #4.3
 
 ### 5. Checking after imputation
 
-####5.0 We can observe which values has been imputed:
+#### 5.0 We can observe which values has been imputed:
 
 -   The `stripplot()` is useful to study the distributions in data sets
     with a low number of data points.
@@ -826,10 +838,9 @@ stripplot(imp) #blue = observed data; red = imputed data
 bwplot(imp)    #blue = observed data; red = imputed data
 ```
 
-####5.1 Evaluate differences between observed and imputed data:
+#### 5.1 Evaluate differences between observed and imputed data:
 
-#####5.1.1.  Observe their distribution before (observed) and after (imputed
-    data):
+##### 5.1.1. Observe their distribution before (observed) and after (imputed data):
 
 ```{r, results='hide', warning = FALSE, message = FALSE, fig.show='hide'}
 densityplot(imp) #blue line = observed data; red lines = imputed data 
@@ -837,10 +848,9 @@ densityplot(imp) #blue line = observed data; red lines = imputed data
 
 **Quiz**
 
--   Do you think distributions match up well? Yes
+-   Do you think distributions match up well?
 
-#####5.1.2.  Compare the distributions of observed and imputed data conditional
-    on the missingness probability.
+##### 5.1.2. Compare the distributions of observed and imputed data conditional on the missingness probability.
 
 Interpretation is more difficult if discrepancies are shown in the
 density plot. Such discrepancies may be caused by a bad imputation
@@ -889,7 +899,7 @@ xyplot(imp, smoking ~ ps | as.factor(.imp),
 In this case, the distributions of the blue and red points are quite
 similar, as expected under MAR.
 
-#####5.1.3.  Compare complete results vs imputed results
+##### 5.1.3. Compare complete results vs imputed results
 
 Observe the differences in the estimates and confidence intervals:
 
@@ -909,8 +919,6 @@ summary(pool(fit), conf.int = TRUE)[c(1,2,7,8)]
 Interpretation: After imputation, age is significant in our model.
 Results regarding all other variables seems to be consistent before and
 after imputation.
-
-
 
 ------------------------------------------------------------------------
 
