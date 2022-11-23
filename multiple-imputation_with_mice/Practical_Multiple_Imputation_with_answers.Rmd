@@ -1,5 +1,5 @@
 ---
-title: "Multiple Imputation in R"
+title: "Multiple Imputation in R (answers)"
 author: "Maria Sanchez and Marta Pineda-Moncusi"
 date: "`r Sys.Date()`"
 output:
@@ -85,7 +85,7 @@ worked and 0 if not. The Index of Multiple Deprivation is a measure of
 social deprivation, linked to the area a patient lives in (variable
 `imdscore`)
 
-```{r dplyr, results='hide', warning = FALSE, message = FALSE}
+```{r dplyr, results='show', warning = FALSE, message = FALSE}
 
 #install.packages("dplyr")
 library(dplyr)
@@ -171,7 +171,7 @@ check if missingnes are associated with completed variables.
 1.  We can check if missing values are associated to observed variables
     using a correlation matrix:
 
-```{r, results='hide',warning = FALSE, message = FALSE, fig.show='hide'}
+```{r, results='hide',warning = FALSE, message = FALSE, fig.show='show'}
 #list the variables you want to test
 miss_var_list = c("eq5d0", "ethnic", "imdscore", "bmi", "smoking")
 complete_var  = c("age", "sex", "ohsdiff","ohs0")
@@ -199,7 +199,7 @@ model.matrix(~0+., data=miss_data[corr_var]) %>%
 2.  Create a dummy variable/s where missing values are classified as 1
     and complete values as 0, then we run a logistic regression:
 
-```{r, results='hide',warning = FALSE, message = FALSE}
+```{r, results='show',warning = FALSE, message = FALSE}
 #list the variables you want to test
 miss_var_list = c("eq5d0", "bmi", "ethnic", "imdscore","smoking")
 complete_var  = c("age", "sex", "retired", "ohsdiff","side","occupation")
@@ -215,7 +215,7 @@ for (v in 1:length(miss_var_list)){
 3.  Alternative, we can use the function na.test() from the package
     misty: This function tests all your data set.
 
-```{r, misty, results='hide',warning = FALSE, message = FALSE}
+```{r, misty, results='show',warning = FALSE, message = FALSE}
 library(misty)
 
 #We are excluding 'id' from the dataset.
@@ -302,7 +302,7 @@ We are going to follow the next steps to built the imputation model:
 We use the command `summary` command to count the number of missing
 observations of missing for each variable of interest
 
-```{r, results='hide',warning = FALSE, message = FALSE}
+```{r, results='show',warning = FALSE, message = FALSE}
 
 #Selecting variables of interest
 analytic_model <- c("ohsdiff","age", "sex", "ethnic", "eq5d0", "imdscore", "bmi", "smoking", "ohs0")
@@ -357,7 +357,7 @@ R has several functions to inspect the missing data pattern.
 The mice package contains a function to inspect the missing data
 pattern: `md.pattern()`
 
-```{r, results='hide',warning = FALSE, message = FALSE}
+```{r, results='show',warning = FALSE, message = FALSE}
 
 #Selecting variables with missing data
 miss_vars <- c( "eq5d0", "ethnic","imdscore", "bmi", "smoking")
@@ -392,7 +392,7 @@ variables exceeding a preset threshold.
 We are using three different R functions to display visually the
 patterns of the missing data:
 
-```{r ggmice VIM, results='hide', warning = FALSE, message = FALSE, fig.show='hide'}
+```{r ggmice VIM, results='hide', warning = FALSE, message = FALSE, fig.show='show'}
 
 library(mice)
 library(ggmice)
@@ -440,7 +440,7 @@ Analytic/main model:
 -   The **independent variables** (*X's*) are = `age`, `sex`, `bmi`,
     `ethnic`, `imdscore` , `smoking`
 
-```{r ggcorrplot, results='hide',warning = FALSE, message = FALSE, fig.show='hide'}
+```{r ggcorrplot, results='hide',warning = FALSE, message = FALSE, fig.show='show'}
 library(ggcorrplot)
 
 #explore which other variables we have available in the data set
@@ -485,7 +485,7 @@ If we know that there is evidence of a non-linear association between a
 numeric variable and the outcome, we should check it and transform the
 variable (if needed):
 
-```{r, results='hide', warning = FALSE, message=FALSE, fig.show='hide'}
+```{r, results='hide', warning = FALSE, message=FALSE, fig.show='show'}
 #List of the variables you want to test (numeric variables)
 num_var = c("age", "eq5d0", "bmi", "imdscore" )
 outcome = "ohsdiff"
@@ -556,7 +556,7 @@ are numeric, we will categorise `bmi` to run this function.
 -   lyt = A type of the lines drawn.
 -   lwd = Width of the lines drawn.
 
-```{r, results='hide', warning = FALSE, message=FALSE, fig.show='hide'}
+```{r, results='hide', warning = FALSE, message=FALSE, fig.show='show'}
 
 ##1) Check outcome distribution:
 #By ploting the histogram we can see if the outcome distribution is skewed or not. 
@@ -584,7 +584,7 @@ interaction.plot(x.factor=bmi_cat, trace.factor=data$sex, response=data$ohsdiff,
 interaction.plot(x.factor=bmi_cat, trace.factor=data$sex, response=data$ohsdiff, fun = mean,  col = c("#0198f9", "#f95801"))
 ```
 
-```{r, results='hide', warning = FALSE, message=FALSE, fig.show='hide'}
+```{r, results='hide', warning = FALSE, message=FALSE, fig.show='show'}
 
 ## Try test interaction with other independent variable. 
 
@@ -740,7 +740,8 @@ meth[nonnorm] <- "pmm"
 meth[log] <- "logreg"
 
 imp2 <- mice(data[impmodel_var], m=5, maxit = 0, method = meth, seed=60109)
-
+```
+```{r, results='show', warning = FALSE, message=FALSE}
 #3.3) Check that mice is using the specific method
 imp2$method
 ```
@@ -775,7 +776,7 @@ impmodel_var=c("age","sex","ohs0","ohsdiff","ethnic","eq5d0","bmi","imdscore","s
 imp = mice(data[impmodel_var], maxit=10, m = 5, seed=60109)  #4.1
 ```
 
-```{r, results='hide', warning = FALSE, message=FALSE}
+```{r, results='show', warning = FALSE, message=FALSE}
 fit = with(data=imp,expr = lm(ohsdiff~age+sex+bmi+eq5d0+ethnic+imdscore+smoking+ohs0)) #4.2
 summary(pool(fit), conf.int = TRUE) #4.3
 ```
@@ -817,7 +818,7 @@ impmodel_var=c("age","sex","ohs0","ohsdiff","ethnic","eq5d0","bmi","imdscore","s
 imp = mice(data[impmodel_var], maxit=10, m = 5, seed=60109)  #4.1
 ```
 
-```{r, results='hide', warning = FALSE, message = FALSE, fig.show='hide'}
+```{r, results='show', warning = FALSE, message = FALSE, fig.show='show'}
 fit = with(data=imp,expr = lm(ohsdiff~age+sex+bmi+eq5d0+ethnic+imdscore+smoking+ohs0)) #4.2
 summary(pool(fit), conf.int = TRUE) #4.3
 
@@ -831,7 +832,7 @@ bwplot(imp)    #blue = observed data; red = imputed data
 #####5.1.1.  Observe their distribution before (observed) and after (imputed
     data):
 
-```{r, results='hide', warning = FALSE, message = FALSE, fig.show='hide'}
+```{r, results='hide', warning = FALSE, message = FALSE, fig.show='show'}
 densityplot(imp) #blue line = observed data; red lines = imputed data 
 ```
 
@@ -854,7 +855,7 @@ The idea is that [under MAR the conditional distributions should be
 similar if the assumed model for creating multiple imputations has a
 good fit]{.underline}. An example is created as:
 
-```{r, results='hide', warning = FALSE, message = FALSE, fig.show='hide'}
+```{r, results='hide', warning = FALSE, message = FALSE, fig.show='show'}
 
 #Model the probability of each record being incomplete as a function of all variables in each imputed data set.
 fit <- with(imp, glm(ici(imp)~ohsdiff+age+sex+bmi+eq5d0+ethnic+imdscore+smoking+ohs0, family = binomial)) 
@@ -893,7 +894,7 @@ similar, as expected under MAR.
 
 Observe the differences in the estimates and confidence intervals:
 
-```{r, results='hide', warning = FALSE, message = FALSE}
+```{r, results='show', warning = FALSE, message = FALSE}
 
 #Complete cases results:variables names, OR, Low and High CI
 fit0 =lm(ohsdiff~age+sex+bmi+eq5d0+ethnic+imdscore+smoking+ohs0, data=na.omit(data))
@@ -948,6 +949,6 @@ for (i in unique(imp.data$.imp)) {  #6.5 Loop start
 Fit.list.mira = as.mira(Fit.list)   #6.6 
 ```
 
-```{r, results='hide', warning = FALSE}
+```{r, results='show', warning = FALSE}
 summary(pool(Fit.list.mira),conf.int = TRUE) #6.7
 ```
