@@ -80,15 +80,16 @@ Pre-operative information was collected on `age` at the time of surgery,
 which body mass index (`bmi`) is calculated), `side` of surgery (Left;
 Right), `ethnic` group (0 = White; 1 = Non white), whether or not they
 are `retired` (0 = Not retired; 1 = Retired), `smoking` (0 = Non-smoker;
-1 = Smoker) and `occupation` is defined as 1 if the individual is manual
-worked and 0 if not. The Index of Multiple Deprivation is a measure of
-social deprivation, linked to the area a patient lives in (variable
-`imdscore`)
+1 = Smoker) and `occupation` is defined as 1 if the individual is a
+manual worked and 0 if not. The Index of Multiple Deprivation is a
+measure of social deprivation, linked to the area a patient lives in
+(variable `imdscore`)
 
-```{r dplyr, results='hide', warning = FALSE, message = FALSE}
+```{r dplyr tibble, results='hide', warning = FALSE, message = FALSE}
 
 #install.packages("dplyr")
 library(dplyr)
+library(tibble)
 
 #See your working directory
 getwd()
@@ -97,10 +98,11 @@ getwd()
 update_wd = "NO" #"NO" for keeping the current working directory. "YES" to update, plus including the new path in folder_path variable below.
 if(update_wd == "YES"){
 folder_path <- ("C:/")  #Remind to use / (NOT \)
-setwd(folder_path)}
+setwd(folder_path)
+}
 
 #load data
-data <- read.csv("hip.csv", sep=',')
+data <- tibble(read.csv("hip.csv", sep=','))
 
 
 #Display the names of variables in the data set.
@@ -143,14 +145,14 @@ summary(data)
 There are three typical mechanisms causing missing data:
 
 -   Missing completely at random (MCAR): The probability of data being
-    missing is the same for all cases (not depend on the observed or
+    missing is the same for all cases (not dependent on the observed or
     unobserved data)
-    -   In the presence of MCAR, complete cases analysis will not
+    -   In the presence of MCAR, complete cases analysis will not depend
         results in biased parameter estimates (e.g. regression
         coefficients)
 -   Missing at random (MAR): The probability of data being missing is
     the same only within groups defined by the observed data.
-    -   In the presence of MAR, **multiple imputation** methdos may lead
+    -   In the presence of MAR, **multiple imputation** methods may lead
         to unbiased results
 -   Missing not at random (MNAR): The probability of data being missing
     varies for reasons that are unknown to us or does depend on the
@@ -159,7 +161,7 @@ There are three typical mechanisms causing missing data:
 ![](images/Types%20of%20missing%20data.png)
 
 To explore the mechanism of the missing data in our data set, we can
-check if missingnes are associated with completed variables.
+check if missingness are associated with completed variables.
 
 1.  We can check if missing values are associated to observed variables
     using a correlation matrix:
@@ -330,10 +332,10 @@ is missing:
     in the observations in which the prior variable contains missing
     (*it can occur as a result of drop-out in longitudinal studies*). If
     the pattern is not monotone, it is called *non-monotone or general*
-3.  *Connected and unconnected*. A missing data pattern is said to be
-    *connected* if any observed data point can be reached from any other
-    observed data point through a sequence of horizontal or vertical
-    moves (like the rook in chess).
+3.  *Unconnected and connected (file matching)*. A missing data pattern
+    is said to be *connected* if any observed data point can be reached
+    from any other observed data point through a sequence of horizontal
+    or vertical moves (like the rook in chess).
 
 The missing data pattern influences the amount of information that can
 be transferred between variables.
@@ -412,7 +414,11 @@ aggr(data[miss_vars], numbers=FALSE, prop=TRUE)
 
 <details>
 
-<summary> *Click to read the interpretation* </summary>
+<summary>
+
+*Click to read the interpretation*
+
+</summary>
 
 There are around 50% missing values in bmi and ethnic, 32% of missing
 values in the variable smoking and less than 5% missing values in eq5d
@@ -422,7 +428,6 @@ See more at: [Chapter 4 Multivariate missing
 data](https://stefvanbuuren.name/fimd/ch-multivariate.html){.uri}
 
 </details>
-
 
 **Quiz**
 
@@ -608,7 +613,11 @@ interaction.plot(x.factor=varX_cat, trace.factor=data$sex, response=data$ohsdiff
 
 <details>
 
-<summary> *Click to read the interpretation* </summary>
+<summary>
+
+*Click to read the interpretation*
+
+</summary>
 
 In general, if the two lines on the interaction plot are parallel then
 there is no interaction effect. However, if the lines intersect then
@@ -730,7 +739,7 @@ names(data)
 ##3.2) Select them
 impmodel_var=c("age","sex","ohs0","ohsdiff","ethnic","eq5d0","bmi","imdscore","smoking") #3.2
 
-#We run the mice code with 0 iterations 
+#We run the mice code with 0 iterations (it is just for the purpose of this example)
 imp <- mice(data[impmodel_var], m=5, maxit=0, seed=60109)
 #Check the method mice used to impute
 imp$method

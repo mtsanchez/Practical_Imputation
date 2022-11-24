@@ -80,15 +80,16 @@ Pre-operative information was collected on `age` at the time of surgery,
 which body mass index (`bmi`) is calculated), `side` of surgery (Left;
 Right), `ethnic` group (0 = White; 1 = Non white), whether or not they
 are `retired` (0 = Not retired; 1 = Retired), `smoking` (0 = Non-smoker;
-1 = Smoker) and `occupation` is defined as 1 if the individual is manual
-worked and 0 if not. The Index of Multiple Deprivation is a measure of
-social deprivation, linked to the area a patient lives in (variable
-`imdscore`)
+1 = Smoker) and `occupation` is defined as 1 if the individual is a
+manual worked and 0 if not. The Index of Multiple Deprivation is a
+measure of social deprivation, linked to the area a patient lives in
+(variable `imdscore`)
 
-```{r dplyr, results='show', warning = FALSE, message = FALSE}
+```{r dplyr tibble, results='show', warning = FALSE, message = FALSE}
 
 #install.packages("dplyr")
 library(dplyr)
+library(tibble)
 
 #See your working directory
 getwd()
@@ -97,10 +98,11 @@ getwd()
 update_wd = "NO" #"NO" for keeping the current working directory. "YES" to update, plus including the new path in folder_path variable below.
 if(update_wd == "YES"){
 folder_path <- ("C:/")  #Remind to use / (NOT \)
-setwd(folder_path)}
+setwd(folder_path)
+}
 
 #load data
-data <- read.csv("hip.csv", sep=',')
+data <- tibble(read.csv("hip.csv", sep=','))
 
 
 #Display the names of variables in the data set.
@@ -150,14 +152,14 @@ summary(data)
 There are three typical mechanisms causing missing data:
 
 -   Missing completely at random (MCAR): The probability of data being
-    missing is the same for all cases (not depend on the observed or
+    missing is the same for all cases (not dependent on the observed or
     unobserved data)
     -   In the presence of MCAR, complete cases analysis will not
         results in biased parameter estimates (e.g. regression
         coefficients)
 -   Missing at random (MAR): The probability of data being missing is
     the same only within groups defined by the observed data.
-    -   In the presence of MAR, **multiple imputation** methdos may lead
+    -   In the presence of MAR, **multiple imputation** methods may lead
         to unbiased results
 -   Missing not at random (MNAR): The probability of data being missing
     varies for reasons that are unknown to us or does depend on the
@@ -166,7 +168,7 @@ There are three typical mechanisms causing missing data:
 ![](images/Types%20of%20missing%20data.png)
 
 To explore the mechanism of the missing data in our data set, we can
-check if missingnes are associated with completed variables.
+check if missingness are associated with completed variables.
 
 1.  We can check if missing values are associated to observed variables
     using a correlation matrix:
@@ -192,7 +194,7 @@ model.matrix(~0+., data=miss_data[corr_var]) %>%
   ggcorrplot(show.diag = F, type="lower", lab=TRUE, lab_size=2)
 ```
 
--   What is the correlation between bmi and ethnic missingnes? how does
+-   What is the correlation between bmi and ethnic missingness? how does
     it mean? The correlation is 0.99, and that means that the variables
     bmi and ethnic have almost the same missing values.
 
@@ -338,10 +340,10 @@ is missing:
     in the observations in which the prior variable contains missing
     (*it can occur as a result of drop-out in longitudinal studies*). If
     the pattern is not monotone, it is called *non-monotone or general*
-3.  *Connected and unconnected*. A missing data pattern is said to be
-    *connected* if any observed data point can be reached from any other
-    observed data point through a sequence of horizontal or vertical
-    moves (like the rook in chess).
+3.  *Unconnected and connected (file matching)*. A missing data pattern
+    is said to be *connected* if any observed data point can be reached
+    from any other observed data point through a sequence of horizontal
+    or vertical moves (like the rook in chess).
 
 The missing data pattern influences the amount of information that can
 be transferred between variables.
@@ -718,7 +720,7 @@ names(data)
 ##3.2) Select them
 impmodel_var=c("age","sex","ohs0","ohsdiff","ethnic","eq5d0","bmi","imdscore","smoking") #3.2
 
-#We run the mice code with 0 iterations 
+#We run the mice code with 0 iterations(it is just for the purpose of this example)
 imp <- mice(data[impmodel_var], m=5, maxit=0, seed=60109)
 #Check the method mice used to impute
 imp$method
@@ -741,6 +743,7 @@ meth[log] <- "logreg"
 
 imp2 <- mice(data[impmodel_var], m=5, maxit = 0, method = meth, seed=60109)
 ```
+
 ```{r, results='show', warning = FALSE, message=FALSE}
 #3.3) Check that mice is using the specific method
 imp2$method
@@ -829,7 +832,8 @@ bwplot(imp)    #blue = observed data; red = imputed data
 
 #### 5.1 Evaluate differences between observed and imputed data:
 
-##### 5.1.1.  Observe their distribution before (observed) and after (imputed
+##### 5.1.1. Observe their distribution before (observed) and after (imputed
+
     data):
 
 ```{r, results='hide', warning = FALSE, message = FALSE, fig.show='show'}
@@ -840,7 +844,8 @@ densityplot(imp) #blue line = observed data; red lines = imputed data
 
 -   Do you think distributions match up well? Yes
 
-##### 5.1.2.  Compare the distributions of observed and imputed data conditional
+##### 5.1.2. Compare the distributions of observed and imputed data conditional
+
     on the missingness probability.
 
 Interpretation is more difficult if discrepancies are shown in the
@@ -890,7 +895,7 @@ xyplot(imp, smoking ~ ps | as.factor(.imp),
 In this case, the distributions of the blue and red points are quite
 similar, as expected under MAR.
 
-##### 5.1.3.  Compare complete results vs imputed results
+##### 5.1.3. Compare complete results vs imputed results
 
 Observe the differences in the estimates and confidence intervals:
 
@@ -910,8 +915,6 @@ summary(pool(fit), conf.int = TRUE)[c(1,2,7,8)]
 Interpretation: After imputation, age is significant in our model.
 Results regarding all other variables seems to be consistent before and
 after imputation.
-
-
 
 ------------------------------------------------------------------------
 
