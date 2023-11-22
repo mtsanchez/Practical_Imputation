@@ -1,8 +1,0 @@
-"0",""
-"0","##2.B) Spliting bmi in >2 categories:"
-"0","bmi_cat=with(data, cut(bmi, breaks = c(0,18.5,25,30,70), labels = c('underweight','normal', 'overweight', 'obese'),right=FALSE))"
-"0",""
-"0","bmi_cat=with(data, cut(bmi, breaks = c(0,25,30,70), labels = c('<25', 'overweight', 'obese'),right=FALSE))"
-"0",""
-"0","#interaction.plot using median of ohsdiff (outcome):"
-"0","interaction.plot(x.factor=bmi_cat, trace.factor=data$sex, response=data$ohsdiff, fun = median,  col = c(""#0198f9"", ""#f95801"")) "

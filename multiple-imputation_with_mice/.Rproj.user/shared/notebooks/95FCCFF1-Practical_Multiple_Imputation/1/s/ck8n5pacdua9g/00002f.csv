@@ -1,7 +1,0 @@
-"0","#If the outcome has a normal distribution, use de mean, otherwise use the median (ie. fun = mean OR fun = median)"
-"0",""
-"0","##2.A) Spliting bmi in 2 categories:"
-"0","bmi_2 = ifelse(data$bmi >= 25, ""25+"", ""<25"")"
-"0",""
-"0","#interaction.plot using median of ohsdiff (outcome)"
-"0","interaction.plot(x.factor=bmi_2, trace.factor=data$sex, response=data$ohsdiff, fun = median,  col = c(""#0198f9"", ""#f95801"")) "

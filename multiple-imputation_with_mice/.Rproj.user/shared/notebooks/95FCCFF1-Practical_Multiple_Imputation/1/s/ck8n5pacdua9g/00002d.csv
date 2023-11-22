@@ -1,4 +1,0 @@
-"0",""
-"0","##1) Check outcome distribution:"
-"0","#By ploting the histogram we can see if the outcome distribution is skewed or not. "
-"0","hist(data$ohsdiff)"

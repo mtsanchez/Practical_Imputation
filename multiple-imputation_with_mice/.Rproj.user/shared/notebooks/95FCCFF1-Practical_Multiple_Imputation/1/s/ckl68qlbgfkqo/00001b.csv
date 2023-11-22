@@ -1,8 +1,0 @@
-"0",""
-"0","## Try test interaction with other independent variable. "
-"0",""
-"0","##Categorise varX if needed:"
-"0","varX_cat = data$ethnic"
-"0",""
-"0","#interaction.plot using median of ohsdiff (outcome):"
-"0","interaction.plot(x.factor=varX_cat, trace.factor=data$sex, response=data$ohsdiff, fun = median,  col = c(""#0198f9"", ""#f95801"")) "

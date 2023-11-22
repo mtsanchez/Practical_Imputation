@@ -14,6 +14,17 @@ editor_options:
 
 ```{r}
 rm(list=ls())
+
+##Install these packages if you need them:
+
+#install.packages("knitr")
+#install.packages("dplyr")
+#install.packages("tibble")
+#install.packages("ggcorrplot")
+#install.packages("misty")
+#install.packages("mice")
+#install.packages("ggmice")
+#install.packages("VIM")
 ```
 
 ```{r setup, include = FALSE, warning = FALSE}
@@ -171,7 +182,6 @@ check if missingness are associated with completed variables.
 miss_var_list = c("eq5d0", "ethnic", "imdscore", "bmi", "smoking")
 complete_var  = c("age", "sex", "ohsdiff","ohs0")
 
-#install.packages("ggcorrplot")
 library(ggcorrplot)
 
 #Generate a data frame where missing variables are codified by 0=non-missing value and 1=missing value:
@@ -214,7 +224,6 @@ for (v in 1:length(miss_var_list)){
     misty: This function tests all your data set.
 
 ```{r misty, results='hide', warning = FALSE, message = FALSE}
-#install.packages("misty")
 library(misty)
 
 #We are excluding 'id' from the dataset.
@@ -361,7 +370,6 @@ pattern: `md.pattern()`
 miss_vars <- c( "eq5d0", "ethnic","imdscore", "bmi", "smoking")
 
 #Exploring missing pattern with md.pattern() function
-#install.packages("mice")
 library(mice)
 md.pattern(data[miss_vars], plot=FALSE)
 
@@ -398,9 +406,6 @@ We are using three different R functions to display visually the
 patterns of the missing data:
 
 ```{r ggmice VIM, results='hide', warning = FALSE, message = FALSE, fig.show='hide'}
-
-#install.packages("ggmice")
-#install.packages("VIM")
 library(mice)
 library(ggmice)
 library(VIM)
@@ -451,7 +456,6 @@ Analytic/main model:
 
 ```{r ggcorrplot, results='hide',warning = FALSE, message = FALSE, fig.show='hide'}
 
-#install.packages("ggcorrplot")
 library(ggcorrplot)
 
 #explore which other variables we have available in the data set
@@ -727,7 +731,6 @@ imputation model\
 
 ```{r, results='hide', warning = FALSE, message=FALSE}
 
-#install.packages("mice")
 library(mice) 
 
 ##3.1) Choose the variables we want to include in the imputation model 
