@@ -14,6 +14,17 @@ editor_options:
 
 ```{r}
 rm(list=ls())
+
+##Install these packages if you need them:
+
+#install.packages("knitr")
+#install.packages("dplyr")
+#install.packages("tibble")
+#install.packages("ggcorrplot")
+#install.packages("misty")
+#install.packages("mice")
+#install.packages("ggmice")
+#install.packages("VIM")
 ```
 
 ```{r setup, include=FALSE, warning = FALSE}
@@ -60,7 +71,7 @@ patients to describe their hip pain and function during the past 4
 weeks. An overall score is created by summing the responses to each of
 the 12 questions, ranging from 0 to 48, where 0 is the worst possible
 score (severe symptoms) and 48 the best score (excellent joint
-function). Variable `ohs0` is the preoperative score and `ohs6`
+function). Variable `ohs0` is the pre-operative score and `ohs6`
 post-operative. The absolute change in OHS between pre- and
 post-operative assessments (variable `ohsdiff`) is negative if patient
 symptoms have improved and positive for worsening.
@@ -85,9 +96,8 @@ manual worked and 0 if not. The Index of Multiple Deprivation is a
 measure of social deprivation, linked to the area a patient lives in
 (variable `imdscore`)
 
-```{r dplyr tibble, results='show', warning = FALSE, message = FALSE}
+```{r dplyr tibble, results='hide', warning = FALSE, message = FALSE}
 
-#install.packages("dplyr")
 library(dplyr)
 library(tibble)
 
@@ -100,10 +110,11 @@ if(update_wd == "YES"){
 folder_path <- ("C:/")  #Remind to use / (NOT \)
 setwd(folder_path)
 }
+```
 
+```{r, results='show', warning = FALSE, message = FALSE}
 #load data
 data <- tibble(read.csv("hip.csv", sep=','))
-
 
 #Display the names of variables in the data set.
 names(data)
@@ -177,6 +188,7 @@ check if missingness are associated with completed variables.
 #list the variables you want to test
 miss_var_list = c("eq5d0", "ethnic", "imdscore", "bmi", "smoking")
 complete_var  = c("age", "sex", "ohsdiff","ohs0")
+
 library(ggcorrplot)
 
 #Generate a data frame where missing variables are codified by 0=non-missing value and 1=missing value:
@@ -428,8 +440,8 @@ data](https://stefvanbuuren.name/fimd/ch-multivariate.html){.uri}
 Auxiliary variables are variables in your data set that are either
 correlated with a missing variable(s) (the recommendation is r \>
 \|0.4\|) or are believed to be associated with missingness. These are
-factors that are not of particular interest in your analytic/main model
-, but they are added to the imputation model to increase power and/or to
+factors that are not of particular interest in your analytic/main model,
+but they are added to the imputation model to increase power and/or to
 help make the assumption of MAR more plausible.
 
 Explore missingness versus potential auxiliary variables (variables non
@@ -444,7 +456,6 @@ Analytic/main model:
 
 ```{r ggcorrplot, results='hide',warning = FALSE, message = FALSE, fig.show='show'}
 
-#install.packages("ggcorrplot")
 library(ggcorrplot)
 
 #explore which other variables we have available in the data set
@@ -524,10 +535,6 @@ The diagnostic plots show residuals in four different ways
 -   Is the relationship between independent numeric variables and
     outcome linear? if it is not, what do your think we should do?
     Transform the variables. Simplest e.g. Categorization
-
--   Which variables does follow a normal distribution?
-
--   Which variables does not follow a normal distribution?
 
 ##### 2.4.2. Checking potential interaction effects
 
@@ -611,7 +618,8 @@ there is likely an interaction effect.
 **Quiz**
 
 Do you think that `sex` is an effect modifier of the relationship
-between `bmi` and `ohsdiff`? No, it is not
+between `bmi` and `ohsdiff`? No, it is not probably that sex is an
+effect modifier.
 
 ##### 2.4.3. **How do I treat variable transformations such as logs, quadratics and interactions?**
 
@@ -715,7 +723,6 @@ imputation model\
 
 ```{r, results='hide', warning = FALSE, message=FALSE}
 
-#install.packages("mice")
 library(mice)
 
 ##3.1) Choose the variables we want to include in the imputation model 
@@ -836,11 +843,7 @@ bwplot(imp)    #blue = observed data; red = imputed data
 
 #### 5.1 Evaluate differences between observed and imputed data:
 
-##### 5.1.1. Observe their distribution before (observed) and after (imputed
-
-```         
-data):
-```
+##### 5.1.1. Observe their distribution before (observed) and after (imputed data):
 
 ```{r, results='hide', warning = FALSE, message = FALSE, fig.show='show'}
 densityplot(imp) #blue line = observed data; red lines = imputed data 
@@ -850,11 +853,7 @@ densityplot(imp) #blue line = observed data; red lines = imputed data
 
 -   Do you think distributions match up well? Yes
 
-##### 5.1.2. Compare the distributions of observed and imputed data conditional
-
-```         
-on the missingness probability.
-```
+##### 5.1.2. Compare the distributions of observed and imputed data conditional on the missingness probability.
 
 Interpretation is more difficult if discrepancies are shown in the
 density plot. Such discrepancies may be caused by a bad imputation

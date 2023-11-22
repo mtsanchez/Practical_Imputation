@@ -200,8 +200,7 @@ model.matrix(~0+., data=miss_data[corr_var]) %>%
 ```
 
 -   What is the correlation between bmi and ethnic missingnes? how does
-    it mean? The correlation is 0.99, and that means that the variables
-    bmi and ethnic have almost the same missing values.
+    it mean?
 
 2.  Create a dummy variable/s where missing values are classified as 1
     and complete values as 0, then we run a logistic regression:
@@ -534,10 +533,6 @@ The diagnostic plots show residuals in four different ways
 
 -   Is the relationship between independent numeric variables and
     outcome linear? if it is not, what do your think we should do?
-
--   Which variables does follow a normal distribution?
-
--   Which variables does not follow a normal distribution?
 
 ##### 2.4.2. Checking potential interaction effects
 
