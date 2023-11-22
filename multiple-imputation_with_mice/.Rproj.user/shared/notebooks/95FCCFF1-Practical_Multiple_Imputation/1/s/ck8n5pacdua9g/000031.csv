@@ -1,0 +1,3 @@
+"0",""
+"0","#interaction.plot using mean of ohsdiff (outcome)"
+"0","interaction.plot(x.factor=bmi_2, trace.factor=data$sex, response=data$ohsdiff, fun = mean,  col = c(""#0198f9"", ""#f95801"")) "

@@ -1,0 +1,33 @@
+{
+    "id": "B9F0E35A",
+    "path": "~/GitHub/Practical_Imputation/multiple-imputation_with_mice/Practical_Multiple_Imputation.Rmd",
+    "project_path": "Practical_Multiple_Imputation.Rmd",
+    "type": "r_markdown",
+    "hash": "1821116257",
+    "contents": "",
+    "dirty": false,
+    "created": 1699686707380.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "727,0",
+        "scrollLine": "211",
+        "last_setup_crc32": "c105ae47bb338d19",
+        "rmdVisualMode": "true",
+        "rmdVisualWrapConfigured": "true",
+        "docOutlineVisible": "1",
+        "rmdVisualModeLocation": "13664:7285.60009765625",
+        "rmdVisualCollapsedChunks": "",
+        "docOutlineSize": "257"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1699792635,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1699792635346,
+    "read_only": false,
+    "read_only_alternatives": []
+}

@@ -1,0 +1,4 @@
+"0",""
+"0","xyplot(imp, smoking ~ ps | as.factor(.imp),"
+"0","       xlab = ""Probability that record is incomplete"","
+"0","       ylab = ""Smoking"", pch = c(1, 19), col = mdc(1:2))"

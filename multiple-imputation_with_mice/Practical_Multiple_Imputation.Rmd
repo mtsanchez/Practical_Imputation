@@ -16,7 +16,7 @@ editor_options:
 rm(list=ls())
 ```
 
-```{r setup, include=FALSE, warning = FALSE}
+```{r setup, include = FALSE, warning = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -44,7 +44,7 @@ may better serve your needs.
 
 We will use the data set ***hip.csv***. This data set is made up for
 this practical. The R code for this practical was developed using R
-4.2.1 version.
+4.2.2 version.
 
 ## Load and evaluate the data set
 
@@ -60,7 +60,7 @@ patients to describe their hip pain and function during the past 4
 weeks. An overall score is created by summing the responses to each of
 the 12 questions, ranging from 0 to 48, where 0 is the worst possible
 score (severe symptoms) and 48 the best score (excellent joint
-function). Variable `ohs0` is the preoperative score and `ohs6`
+function). Variable `ohs0` is the pre-operative score and `ohs6`
 post-operative. The absolute change in OHS between pre- and
 post-operative assessments (variable `ohsdiff`) is negative if patient
 symptoms have improved and positive for worsening.
@@ -87,7 +87,6 @@ measure of social deprivation, linked to the area a patient lives in
 
 ```{r dplyr tibble, results='hide', warning = FALSE, message = FALSE}
 
-#install.packages("dplyr")
 library(dplyr)
 library(tibble)
 
@@ -167,9 +166,12 @@ check if missingness are associated with completed variables.
     using a correlation matrix:
 
 ```{r, results='hide',warning = FALSE, message = FALSE, fig.show='hide'}
+
 #list the variables you want to test
 miss_var_list = c("eq5d0", "ethnic", "imdscore", "bmi", "smoking")
 complete_var  = c("age", "sex", "ohsdiff","ohs0")
+
+#install.packages("ggcorrplot")
 library(ggcorrplot)
 
 #Generate a data frame where missing variables are codified by 0=non-missing value and 1=missing value:
@@ -195,6 +197,7 @@ model.matrix(~0+., data=miss_data[corr_var]) %>%
     and complete values as 0, then we run a logistic regression:
 
 ```{r, results='hide',warning = FALSE, message = FALSE}
+
 #list the variables you want to test
 miss_var_list = c("eq5d0", "bmi", "ethnic", "imdscore","smoking")
 complete_var  = c("age", "sex", "retired", "ohsdiff","side","occupation")
@@ -210,7 +213,8 @@ for (v in 1:length(miss_var_list)){
 3.  Alternative, we can use the function na.test() from the package
     misty: This function tests all your data set.
 
-```{r, misty, results='hide',warning = FALSE, message = FALSE}
+```{r misty, results='hide', warning = FALSE, message = FALSE}
+#install.packages("misty")
 library(misty)
 
 #We are excluding 'id' from the dataset.
@@ -357,6 +361,7 @@ pattern: `md.pattern()`
 miss_vars <- c( "eq5d0", "ethnic","imdscore", "bmi", "smoking")
 
 #Exploring missing pattern with md.pattern() function
+#install.packages("mice")
 library(mice)
 md.pattern(data[miss_vars], plot=FALSE)
 
@@ -369,11 +374,7 @@ md.pattern(data[miss_vars], plot=FALSE)
 
 <details>
 
-<summary>
-
-*Click to read the interpretation*
-
-</summary>
+<summary>*Click to read the interpretation*</summary>
 
 In the main body of the output table the values "1" indicates
 non-missing value and "0" indicates missing value. The first column
@@ -398,14 +399,14 @@ patterns of the missing data:
 
 ```{r ggmice VIM, results='hide', warning = FALSE, message = FALSE, fig.show='hide'}
 
+#install.packages("ggmice")
+#install.packages("VIM")
 library(mice)
 library(ggmice)
 library(VIM)
 
 md.pattern(data[miss_vars], plot=TRUE, rotate.names=TRUE)
-
 plot_pattern(data[miss_vars], vrb = "all", square = FALSE, rotate = FALSE, cluster = NULL)
-
 aggr(data[miss_vars], numbers=FALSE, prop=TRUE)
 
 ```
@@ -414,11 +415,7 @@ aggr(data[miss_vars], numbers=FALSE, prop=TRUE)
 
 <details>
 
-<summary>
-
-*Click to read the interpretation*
-
-</summary>
+<summary>*Click to read the interpretation*</summary>
 
 There are around 50% missing values in bmi and ethnic, 32% of missing
 values in the variable smoking and less than 5% missing values in eq5d
@@ -453,6 +450,8 @@ Analytic/main model:
     `ethnic`, `imdscore` , `smoking`
 
 ```{r ggcorrplot, results='hide',warning = FALSE, message = FALSE, fig.show='hide'}
+
+#install.packages("ggcorrplot")
 library(ggcorrplot)
 
 #explore which other variables we have available in the data set
@@ -613,11 +612,7 @@ interaction.plot(x.factor=varX_cat, trace.factor=data$sex, response=data$ohsdiff
 
 <details>
 
-<summary>
-
-*Click to read the interpretation*
-
-</summary>
+<summary>*Click to read the interpretation*</summary>
 
 In general, if the two lines on the interaction plot are parallel then
 there is no interaction effect. However, if the lines intersect then
@@ -731,7 +726,9 @@ imputation model\
 3.3 Check the imputation method used for each variable
 
 ```{r, results='hide', warning = FALSE, message=FALSE}
-library(mice)
+
+#install.packages("mice")
+library(mice) 
 
 ##3.1) Choose the variables we want to include in the imputation model 
 names(data)
@@ -839,6 +836,7 @@ imp = mice(data[impmodel_var], maxit=10, m = 5, seed=60109)  #4.1
 ```
 
 ```{r, results='hide', warning = FALSE, message = FALSE, fig.show='hide'}
+
 fit = with(data=imp,expr = lm(ohsdiff~age+sex+bmi+eq5d0+ethnic+imdscore+smoking+ohs0)) #4.2
 summary(pool(fit), conf.int = TRUE) #4.3
 
